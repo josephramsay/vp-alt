@@ -49,8 +49,8 @@ echo "RDS subnet group VPC ID: ${RDS_SubnetGrp_Data2_VPC_ID}"
 
 create_rds_database () {
     # generate a password for RDS
-    export RDS_USERNAME=vp.user
-    export RDS_PASSWORD="vp.$(date | md5sum  |cut -f1 -d' ')"
+    export RDS_USERNAME=vp_user
+    export RDS_PASSWORD="vp_$(date | md5sum  |cut -f1 -d' ')"
     export RDS_PASSWORD_PATH=~/.aws/rds_data2_password
     echo ${RDS_PASSWORD}  > ${RDS_PASSWORD_PATH}
     chmod 600 ${RDS_PASSWORD_PATH}
@@ -67,9 +67,9 @@ create_rds_database () {
         --db-instance-identifier ${RDS_DB_IDENTIFIER} \
         --db-name ${RDS_DB_NAME} \
         --db-instance-class ${RDS_DB_CLASS} \
-        --engine ${RDS_ENGINE} \
+        --engine ${RDS_DB_ENGINE} \
         --db-subnet-group-name ${RDS_SUBNET_GROUP_NAME} \
-        --vpc-security-group-ids ${RDS_SG} \
+        --vpc-security-group-ids ${EC2_SecGrp_Data2_ID} \
         --master-username ${RDS_USERNAME} \
         --master-user-password ${RDS_PASSWORD} \
         --backup-retention-period ${RDS_DB_RETENTION} \
@@ -77,7 +77,7 @@ create_rds_database () {
         ${DELETION_PROTECTION}
 
     aws rds describe-db-instances \
-        --db-instance-identifier rds-eks-airflow \
+        --db-instance-identifier ${RDS_DB_IDENTIFIER} \
         --query "DBInstances[].DBInstanceStatus" \
         --output text
 }
