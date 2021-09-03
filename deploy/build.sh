@@ -22,7 +22,7 @@ fetch_vpc_ids () {
 
 create_security_group () {
     #SG is based on VPC so security scope implied
-    export SECURITY_GROUP_NAME="sg-data2"
+    export SECURITY_GROUP_NAME="vpjr-sg-data2"
     export SECURITY_GROUP_DESC="Security Group for Data2"
     #TODO from cr-sec-grp to cr-db-sec-grp?
     #aws rds create-db-security-group \
@@ -46,7 +46,7 @@ create_subnet_group () {
         --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
         --query "Subnets[*].SubnetId" --output json | jq -c .)
 
-    export SUBNET_GROUP_NAME="sng-data2"
+    export SUBNET_GROUP_NAME="vpjr-sng-data2"
     export SUBNET_GROUP_DESC="Subnet Group for Data2"
 
     aws rds create-db-subnet-group \
@@ -98,7 +98,7 @@ create_rds_database () {
     else DELETION_PROTECTION="--deletion-protection";
     fi
 
-    RDS_DB_IDENTIFIER=vp-rds-data2
+    RDS_DB_IDENTIFIER=vpjr-rds-data2
     RDS_DB_NAME=RDS_DATA2
     RDS_DB_ENGINE=postgres
     RDS_DB_PORT=5432
