@@ -1,76 +1,83 @@
 #!/bin/bash
 
 TESTRUN="FALSE"
-NETWORK="PRIVATE"
+VPC="NONDEFAULT"
+NETWORK="PUBLIC"
 
 fetch_vpc_ids () {
     export CLUSTER_NAME=vp-test
     #export VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=eksctl-${CLUSTER_NAME}-cluster/VPC" --query "Vpcs[0].VpcId" --output text)
     #echo "VPC ID: ${VPC_ID}"
 
-    VPC_DEF=$(aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --output text)
-    VPC_NDEF=$(aws ec2 describe-vpcs --query "Vpcs[?IsDefault == \`false\`].VpcId" --output text)
-
-    echo "VPC Default ID: ${VPC_DEF}" #public
-    echo "VPC NonDefault ID: ${VPC_NDEF}" #private
-
-
-    if [[ ${NETWORK} = 'PRIVATE' ]]; 
-    then export VPC_ID=${VPC_NDEF};
-    else export VPC_ID=${VPC_DEF};
+    if [[ ${VPC} = 'DEFAULT' ]]; then 
+        export VPC_ID=$(aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --output text)
+    elif [[ ${VPC} = 'NONDEFAULT' ]]; then
+        export VPC_ID=$(aws ec2 describe-vpcs --query "Vpcs[?IsDefault == \`false\`].VpcId" --output text)
+    else 
+        echo "VPC identifier must be either DEFAULT or NONDEFAULT"
+        exit 1
     fi
 }
 
 
 create_security_group () {
     #SG is based on VPC so security scope implied
-    export EC2_SECURITY_GROUP_NAME="rds-sg-data2"
-    export EC2_SECURITY_GROUP_DESC="RDS Security Group for Data2"
+    export SECURITY_GROUP_NAME="sg-data2"
+    export SECURITY_GROUP_DESC="Security Group for Data2"
     #TODO from cr-sec-grp to cr-db-sec-grp?
     #aws rds create-db-security-group \
     aws ec2 create-security-group \
-        --description "${EC2_SECURITY_GROUP_DESC}" \
-        --group-name ${EC2_SECURITY_GROUP_NAME} \
+        --description "${SECURITY_GROUP_DESC}" \
+        --group-name ${SECURITY_GROUP_NAME} \
         --vpc-id ${VPC_ID}
 
-    export EC2_SG_Data2=$(aws ec2 describe-security-groups \
-        --filters Name=group-name,Values=${EC2_SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
+    export SG_DATA2=$(aws ec2 describe-security-groups \
+        --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
         --query "SecurityGroups[0].GroupId" --output text)
 
 }
-echo "EC2 security group ID: ${EC2_SG_Data2}"
+echo "EC2 security group ID: ${SG_DATA2}"
 #TODO Write SG to file (as ref for later deletion)
 
 create_subnet_group () {
-    PUBLIC_SUBNET_IDS=$(aws ec2 describe-subnets \
-        --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetPublic*" \
-        --query "Subnets[*].SubnetId" --output json | jq -c .)
-    PRIVATE_SUBNET_IDS=$(aws ec2 describe-subnets \
-        --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetPrivate*" \
+        
+    SFX=`echo ${NETWORK} | cut -c2- | awk '{print tolower($0)}'`
+    export SUBNET_IDS=$(aws ec2 describe-subnets \
+        --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
         --query "Subnets[*].SubnetId" --output json | jq -c .)
 
-    if [[ $NETWORK = 'PRIVATE' ]]; 
-    then export SUBNET_IDS=${PRIVATE_SUBNET_IDS};
-    else export SUBNET_IDS=${PUBLIC_SUBNET_IDS};
-    fi
-
-    export RDS_SUBNET_GROUP_NAME="rds-sng-data2"
-    export RDS_SUBNET_GROUP_DESC="RDS Subnet Group for Data2"
+    export SUBNET_GROUP_NAME="sng-data2"
+    export SUBNET_GROUP_DESC="Subnet Group for Data2"
 
     aws rds create-db-subnet-group \
-        --db-subnet-group-name ${RDS_SUBNET_GROUP_NAME} \
-        --db-subnet-group-description "${RDS_SUBNET_GROUP_DESC}" \
+        --db-subnet-group-name ${SUBNET_GROUP_NAME} \
+        --db-subnet-group-description "${SUBNET_GROUP_DESC}" \
         --subnet-ids ${SUBNET_IDS}
         
-    RDS_VPC_ID=$(aws rds describe-db-subnet-groups \
-    --filters Name=group-name,Values=${RDS_SUBNET_GROUP_NAME} \
+    SNG_VPC_ID=$(aws rds describe-db-subnet-groups \
+    --filters Name=group-name,Values=${SUBNET_GROUP_NAME} \
     --query "DBSubnetGroups[0].VpcId" --output text)
 
-    if [[ ${RDS_VPC_ID} != ${VPC_ID} ]];
+    if [[ ${SNG_VPC_ID} != ${VPC_ID} ]];
     then 
-        echo "RDS subnet group VPC ID's don't match ${RDS_VPC_ID} != ${VPC_ID}"
+        echo "RDS subnet group VPC ID's don't match ${SNG_VPC_ID} != ${VPC_ID}"
         exit 1;
     fi
+}
+
+authorise_subnets (){
+
+    RDS_DB_PORT=$1
+    SUBNET_CIDR=$(aws ec2 describe-subnets --subnet-ids ${SUBNET_IDS} \
+        --query "Subnets[].CidrBlock[]" --output text )
+
+    for cidr in ${SUBNET_CIDR}; do
+        aws ec2 authorize-security-group-ingress --group-id ${SG_DATA2} \
+            --protocol tcp \
+            --port ${RDS_DB_PORT} \
+            --cidr ${cidr};
+    done
+    echo "Authorising CIDR groups "${SUBNET_CIDR}
 }
 
 create_rds_database () {
@@ -94,17 +101,20 @@ create_rds_database () {
     RDS_DB_IDENTIFIER=vp-rds-data2
     RDS_DB_NAME=RDS_DATA2
     RDS_DB_ENGINE=postgres
+    RDS_DB_PORT=5432
     RDS_DB_CLASS=db.t3.micro
     RDS_DB_RETENTION=30
     RDS_DB_STORAGE=20
+
+    authorise_subnets ${RDS_DB_PORT}
 
     aws rds create-db-instance \
         --db-instance-identifier ${RDS_DB_IDENTIFIER} \
         --db-name ${RDS_DB_NAME} \
         --db-instance-class ${RDS_DB_CLASS} \
         --engine ${RDS_DB_ENGINE} \
-        --db-subnet-group-name ${RDS_SUBNET_GROUP_NAME} \
-        --vpc-security-group-ids ${EC2_SG_Data2} \
+        --db-subnet-group-name ${SUBNET_GROUP_NAME} \
+        --vpc-security-group-ids ${SG_DATA2} \
         --master-username ${RDS_USERNAME} \
         --master-user-password ${RDS_PASSWORD} \
         --backup-retention-period ${RDS_DB_RETENTION} \
@@ -120,16 +130,16 @@ create_rds_database () {
 
 clean_up () {
     aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot
-    aws rds delete-db-subnet-group --db-subnet-group-name ${RDS_SUBNET_GROUP_NAME}
+    aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
     #TODO from cr-sec-grp to cr-db-sec-grp!
-    #aws rds delete-db-security-group --db-security-group-name ${EC2_SG_Data2}
-    aws ec2 delete-security-group --group-name ${EC2_SG_Data2}
+    #aws rds delete-db-security-group --db-security-group-name ${SG_DATA2}
+    aws ec2 delete-security-group --group-name ${SG_DATA2}
 }
 
 fetch_vpc_ids
 create_security_group
-#create_subnet_group
-#create_rds_database
+create_subnet_group
+create_rds_database
 
 #if [[ ${TESTRUN} = 'TRUE' ]]; 
 #then clean_up;
