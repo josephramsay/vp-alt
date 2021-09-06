@@ -18,6 +18,7 @@ fetch_vpc_ids () {
         exit 1
     fi
 }
+echo "VPC ID: ${VPC_ID}" > ~/.aws/vpjr.refs
 
 
 create_security_group () {
@@ -36,8 +37,7 @@ create_security_group () {
         --query "SecurityGroups[0].GroupId" --output text)
 
 }
-echo "EC2 security group ID: ${SG_DATA2}"
-#TODO Write SG to file (as ref for later deletion)
+echo "EC2 SG ID: ${SG_DATA2}" >> ~/.aws/vpjr.refs
 
 create_subnet_group () {
         
@@ -65,6 +65,11 @@ create_subnet_group () {
     fi
 }
 
+echo "SNG Name: ${SUBNET_GROUP_NAME}" >> ~/.aws/vpjr.refs
+
+
+"""Extract CIDR Blocks from desired subnets and user these blocks to create 
+Security Group ingress rules""" 
 authorise_subnets (){
 
     RDS_DB_PORT=$1
@@ -77,11 +82,14 @@ authorise_subnets (){
             --port ${RDS_DB_PORT} \
             --cidr ${cidr};
     done
-    echo "Authorising CIDR groups "${SUBNET_CIDR}
 }
+echo "SNG CIDR: ${SUBNET_CIDR}" >> ~/.aws/vpjr.refs
 
+"""
+Create PostgreSQL database in RDS using the Security Group created above
+and with access to required subnet groups"""
 create_rds_database () {
-    # generate a password for RDS
+    # generate a password for RDS or use a stored one if available
     RDS_USERNAME=vp_user
     RDS_PASSWORD_PATH=~/.aws/rds_data2_password
     if [[ -f $RDS_PASSWORD_PATH ]]; 
@@ -108,6 +116,7 @@ create_rds_database () {
 
     authorise_subnets ${RDS_DB_PORT}
 
+    #Create the RDS instance
     aws rds create-db-instance \
         --db-instance-identifier ${RDS_DB_IDENTIFIER} \
         --db-name ${RDS_DB_NAME} \
@@ -121,18 +130,21 @@ create_rds_database () {
         --allocated-storage ${RDS_DB_STORAGE} \
         ${DELETION_PROTECTION}
 
-    aws rds describe-db-instances \
-        --db-instance-identifier ${RDS_DB_IDENTIFIER} \
-        --query "DBInstances[].DBInstanceStatus" \
-        --output text
+    #Block until the database has been created
+    while [ ${BLOCK} == True && ${RDS_STATUS} == True ];
+    do
+        RDS_STATUS=$(aws rds describe-db-instances \
+            --db-instance-identifier ${RDS_DB_IDENTIFIER} \
+            --query "DBInstances[].DBInstanceStatus" \
+            --output text | cut -c10 )
+        sleep 30
+    done
 }
-
+echo "RDS ID: ${RDS_DB_IDENTIFIER}" >> ~/.aws/vpjr.refs
 
 clean_up () {
     aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot
     aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
-    #TODO from cr-sec-grp to cr-db-sec-grp!
-    #aws rds delete-db-security-group --db-security-group-name ${SG_DATA2}
     aws ec2 delete-security-group --group-name ${SG_DATA2}
 }
 
@@ -144,3 +156,4 @@ create_rds_database
 #if [[ ${TESTRUN} = 'TRUE' ]]; 
 #then clean_up;
 #fi
+
