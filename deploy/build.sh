@@ -1,9 +1,24 @@
 #!/bin/bash
 
+#Set args from migrate script if provided
+RDS_DB_NAME=${1:-RDS_DATA2}
+RDS_DB_USER=${2:-vp_user}
+RDS_DB_PASSWORD_PATH=${3:-~/.aws/rds_data2_password}
+
+
+echo "db ${RDS_DB_NAME} usr ${RDS_DB_USER} pth ${RDS_DB_PASSWORD_PATH}"
+exit 1
+
+#Local switches
 TESTRUN="FALSE"
 VPC="NONDEFAULT"
 NETWORK="PUBLIC"
+BLOCK="TRUE"
 
+'''
+Currently we have two VPCs that are most easily distinguished by their default status. Read
+the one that matches the VPC we want to use. 
+NB. This will probably change in the future'''
 fetch_vpc_ids () {
     export CLUSTER_NAME=vp-test
     #export VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=eksctl-${CLUSTER_NAME}-cluster/VPC" --query "Vpcs[0].VpcId" --output text)
@@ -18,7 +33,7 @@ fetch_vpc_ids () {
         exit 1
     fi
 }
-echo "VPC ID: ${VPC_ID}" > ~/.aws/vpjr.refs
+echo "VPC-ID: ${VPC_ID}" > ~/.aws/vpjr.refs
 
 
 create_security_group () {
@@ -37,7 +52,7 @@ create_security_group () {
         --query "SecurityGroups[0].GroupId" --output text)
 
 }
-echo "EC2 SG ID: ${SG_DATA2}" >> ~/.aws/vpjr.refs
+echo "EC2-SG-ID: ${SG_DATA2}" >> ~/.aws/vpjr.refs
 
 create_subnet_group () {
         
@@ -65,7 +80,7 @@ create_subnet_group () {
     fi
 }
 
-echo "SNG Name: ${SUBNET_GROUP_NAME}" >> ~/.aws/vpjr.refs
+echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ~/.aws/vpjr.refs
 
 
 """Extract CIDR Blocks from desired subnets and user these blocks to create 
@@ -83,22 +98,22 @@ authorise_subnets (){
             --cidr ${cidr};
     done
 }
-echo "SNG CIDR: ${SUBNET_CIDR}" >> ~/.aws/vpjr.refs
+echo "SNG-CIDR: ${SUBNET_CIDR}" >> ~/.aws/vpjr.refs
 
 """
 Create PostgreSQL database in RDS using the Security Group created above
 and with access to required subnet groups"""
 create_rds_database () {
     # generate a password for RDS or use a stored one if available
-    RDS_USERNAME=vp_user
-    RDS_PASSWORD_PATH=~/.aws/rds_data2_password
-    if [[ -f $RDS_PASSWORD_PATH ]]; 
+    #RDS_DB_USER=vp_user
+    #RDS_DB_PASSWORD_PATH=~/.aws/rds_data2_password
+    if [[ -f $RDS_DB_PASSWORD_PATH ]]; 
     then
-        RDS_PASSWORD=$(head -n 1 $RDS_PASSWORD_PATH);
+        RDS_DB_PASS=$(head -n 1 $RDS_DB_PASSWORD_PATH);
     else
-        RDS_PASSWORD="vp_$(date | md5sum | cut -f1 -d' ')";
-        echo ${RDS_PASSWORD}  > ${RDS_PASSWORD_PATH}
-        chmod 600 ${RDS_PASSWORD_PATH}
+        RDS_DB_PASS="vp_$(date | md5sum | cut -f1 -d' ')";
+        echo ${RDS_DB_PASS}  > ${RDS_DB_PASSWORD_PATH}
+        chmod 600 ${RDS_DB_PASSWORD_PATH}
     fi
 
     if [[ ${TESTRUN} = 'TRUE' ]]; 
@@ -107,7 +122,7 @@ create_rds_database () {
     fi
 
     RDS_DB_IDENTIFIER=vpjr-rds-data2
-    RDS_DB_NAME=RDS_DATA2
+    #RDS_DB_NAME=RDS_DATA2
     RDS_DB_ENGINE=postgres
     RDS_DB_PORT=5432
     RDS_DB_CLASS=db.t3.micro
@@ -124,23 +139,23 @@ create_rds_database () {
         --engine ${RDS_DB_ENGINE} \
         --db-subnet-group-name ${SUBNET_GROUP_NAME} \
         --vpc-security-group-ids ${SG_DATA2} \
-        --master-username ${RDS_USERNAME} \
-        --master-user-password ${RDS_PASSWORD} \
+        --master-username ${RDS_DB_USER} \
+        --master-user-password ${RDS_DB_PASS} \
         --backup-retention-period ${RDS_DB_RETENTION} \
         --allocated-storage ${RDS_DB_STORAGE} \
         ${DELETION_PROTECTION}
 
     #Block until the database has been created
-    while [ ${BLOCK} == True && ${RDS_STATUS} == True ];
+    while [[ ${BLOCK} == True && ${RDS_STATUS} != "available" ]];
     do
         RDS_STATUS=$(aws rds describe-db-instances \
             --db-instance-identifier ${RDS_DB_IDENTIFIER} \
             --query "DBInstances[].DBInstanceStatus" \
-            --output text | cut -c10 )
-        sleep 30
+            --output text)
+        sleep 10
     done
 }
-echo "RDS ID: ${RDS_DB_IDENTIFIER}" >> ~/.aws/vpjr.refs
+echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ~/.aws/vpjr.refs
 
 clean_up () {
     aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot
