@@ -1,24 +1,46 @@
 #!/bin/bash
 
-#Set args from migrate script if provided
-RDS_DB_NAME=${1:-RDS_DATA2}
-RDS_DB_USER=${2:-vp_user}
-RDS_DB_PASSWORD_PATH=${3:-~/.aws/rds_data2_password}
-
-
-echo "db ${RDS_DB_NAME} usr ${RDS_DB_USER} pth ${RDS_DB_PASSWORD_PATH}"
-exit 1
+set -e
 
 #Local switches
+PREFIX=vpjr
 TESTRUN="FALSE"
 VPC="NONDEFAULT"
 NETWORK="PUBLIC"
 BLOCK="TRUE"
 
-'''
-Currently we have two VPCs that are most easily distinguished by their default status. Read
-the one that matches the VPC we want to use. 
-NB. This will probably change in the future'''
+#Set args from migrate script if provided
+RDS_DB_NAME=${1:-RDS_DATA}
+RDS_DB_USER=${2:-vp_user}
+RDS_DB_PASSWORD_PATH=${3:-~/.aws/rds_db_password}
+
+usage () {
+    echo "Usage: ./build.sh <db-name> <db-user> <pwd-path>"
+    echo "   db-name: Name of the database to instantiate"
+    echo "   db-user: Name of the initital database user"
+    echo "   pwd-path: Location of the file to store the password for <db-user>"
+}
+
+error () {
+    if [[ $? > 0 ]]; 
+    then
+        'echo "\"${last_command}\" command failed with exit code $?."'
+    fi
+}
+
+trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+trap error EXIT
+
+if [[ $RDS_DB_NAME == *"help"* ]]; then
+    usage
+    exit 
+fi
+
+REFS=~/.aws/vpjr.refs
+
+# Currently we have two VPCs that are most easily distinguished by their default status. Read
+# the one that matches the VPC we want to use. 
+# NB. This will probably change in the future
 fetch_vpc_ids () {
     export CLUSTER_NAME=vp-test
     #export VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=eksctl-${CLUSTER_NAME}-cluster/VPC" --query "Vpcs[0].VpcId" --output text)
@@ -33,13 +55,13 @@ fetch_vpc_ids () {
         exit 1
     fi
 }
-echo "VPC-ID: ${VPC_ID}" > ~/.aws/vpjr.refs
+echo "VPC-ID: ${VPC_ID}" > ${REFS}
 
 
 create_security_group () {
     #SG is based on VPC so security scope implied
-    export SECURITY_GROUP_NAME="vpjr-sg-data2"
-    export SECURITY_GROUP_DESC="Security Group for Data2"
+    export SECURITY_GROUP_NAME="${PREFIX}-sg-${RDS_DB_NAME}"
+    export SECURITY_GROUP_DESC="Security Group for ${RDS_DB_NAME}"
     #TODO from cr-sec-grp to cr-db-sec-grp?
     #aws rds create-db-security-group \
     aws ec2 create-security-group \
@@ -47,12 +69,12 @@ create_security_group () {
         --group-name ${SECURITY_GROUP_NAME} \
         --vpc-id ${VPC_ID}
 
-    export SG_DATA2=$(aws ec2 describe-security-groups \
+    export SG_DATA=$(aws ec2 describe-security-groups \
         --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
         --query "SecurityGroups[0].GroupId" --output text)
 
 }
-echo "EC2-SG-ID: ${SG_DATA2}" >> ~/.aws/vpjr.refs
+echo "EC2-SG-ID: ${SG_DATA}" >> ${REFS}
 
 create_subnet_group () {
         
@@ -61,8 +83,8 @@ create_subnet_group () {
         --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
         --query "Subnets[*].SubnetId" --output json | jq -c .)
 
-    export SUBNET_GROUP_NAME="vpjr-sng-data2"
-    export SUBNET_GROUP_DESC="Subnet Group for Data2"
+    export SUBNET_GROUP_NAME="${PREFIX}-sng-${RDS_DB_NAME}"
+    export SUBNET_GROUP_DESC="Subnet Group for ${RDS_DB_NAME}"
 
     aws rds create-db-subnet-group \
         --db-subnet-group-name ${SUBNET_GROUP_NAME} \
@@ -80,11 +102,11 @@ create_subnet_group () {
     fi
 }
 
-echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ~/.aws/vpjr.refs
+echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ${REFS}
 
 
-"""Extract CIDR Blocks from desired subnets and user these blocks to create 
-Security Group ingress rules""" 
+# Extract CIDR Blocks from desired subnets and user these blocks to create 
+# Security Group ingress rules
 authorise_subnets (){
 
     RDS_DB_PORT=$1
@@ -92,17 +114,17 @@ authorise_subnets (){
         --query "Subnets[].CidrBlock[]" --output text )
 
     for cidr in ${SUBNET_CIDR}; do
-        aws ec2 authorize-security-group-ingress --group-id ${SG_DATA2} \
+        aws ec2 authorize-security-group-ingress --group-id ${SG_DATA} \
             --protocol tcp \
             --port ${RDS_DB_PORT} \
             --cidr ${cidr};
     done
 }
-echo "SNG-CIDR: ${SUBNET_CIDR}" >> ~/.aws/vpjr.refs
+echo "SNG-CIDR: ${SUBNET_CIDR}" >> ${REFS}
 
-"""
-Create PostgreSQL database in RDS using the Security Group created above
-and with access to required subnet groups"""
+
+# Create PostgreSQL database in RDS using the Security Group created above
+# and with access to required subnet groups
 create_rds_database () {
     # generate a password for RDS or use a stored one if available
     #RDS_DB_USER=vp_user
@@ -111,7 +133,7 @@ create_rds_database () {
     then
         RDS_DB_PASS=$(head -n 1 $RDS_DB_PASSWORD_PATH);
     else
-        RDS_DB_PASS="vp_$(date | md5sum | cut -f1 -d' ')";
+        RDS_DB_PASS="${PREFIX}_$(date | md5sum | cut -f1 -d' ')";
         echo ${RDS_DB_PASS}  > ${RDS_DB_PASSWORD_PATH}
         chmod 600 ${RDS_DB_PASSWORD_PATH}
     fi
@@ -121,7 +143,7 @@ create_rds_database () {
     else DELETION_PROTECTION="--deletion-protection";
     fi
 
-    RDS_DB_IDENTIFIER=vpjr-rds-data2
+    RDS_DB_IDENTIFIER=${PREFIX}-rds-${RDS_DB_NAME}
     #RDS_DB_NAME=RDS_DATA2
     RDS_DB_ENGINE=postgres
     RDS_DB_PORT=5432
@@ -138,7 +160,7 @@ create_rds_database () {
         --db-instance-class ${RDS_DB_CLASS} \
         --engine ${RDS_DB_ENGINE} \
         --db-subnet-group-name ${SUBNET_GROUP_NAME} \
-        --vpc-security-group-ids ${SG_DATA2} \
+        --vpc-security-group-ids ${SG_DATA} \
         --master-username ${RDS_DB_USER} \
         --master-user-password ${RDS_DB_PASS} \
         --backup-retention-period ${RDS_DB_RETENTION} \
@@ -154,13 +176,19 @@ create_rds_database () {
             --output text)
         sleep 10
     done
+    
+    export RDS_DB_HOST=$(aws rds describe-db-instances \
+            --db-instance-identifier ${RDS_DB_IDENTIFIER} \
+            --query "DBInstances[].Endpoint.Address" \
+            --output text)
 }
-echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ~/.aws/vpjr.refs
+echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ${REFS}
+echo "RDS-HOST: ${RDS_DB_HOST}" >> ${REFS}
 
 clean_up () {
     aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot
     aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
-    aws ec2 delete-security-group --group-name ${SG_DATA2}
+    aws ec2 delete-security-group --group-name ${SG_DATA}
 }
 
 fetch_vpc_ids
@@ -168,6 +196,8 @@ create_security_group
 create_subnet_group
 create_rds_database
 
+# Return the hostname and the user params which might be different is no src was provided
+echo ${RDS_DB_HOST},${RDS_DB_NAME},${RDS_DB_USER},${RDS_DB_PASSWORD_PATH}
 #if [[ ${TESTRUN} = 'TRUE' ]]; 
 #then clean_up;
 #fi
