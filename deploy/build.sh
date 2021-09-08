@@ -6,7 +6,7 @@ set -e
 PREFIX=vpjr
 REFS=~/.aws/vpjr.refs
 
-TESTRUN="FALSE"
+PROTECT="FALSE"
 VPC="NONDEFAULT"
 NETWORK="PUBLIC"
 BLOCK="TRUE"
@@ -38,6 +38,13 @@ if [[ $RDS_DB_NAME == *"help"* ]]; then
     exit 
 fi
 
+write_refs () {
+    if [[ ${1} == "NEW" && -n ${2} ]]; 
+    then eval 'echo $2=$'$2 > ${REFS};
+    else eval 'echo $1=$'$1 >> ${REFS};
+    fi
+}
+
 # Currently we have two VPCs that are most easily distinguished by their default status. Read
 # the one that matches the VPC we want to use. 
 # NB. This will probably change in the future
@@ -55,7 +62,7 @@ fetch_vpc_ids () {
         exit 1
     fi
 
-    echo "VPC-ID: ${VPC_ID}" > ${REFS}
+    write_refs NEW VPC_ID
 }
 
 create_security_group () {
@@ -73,7 +80,7 @@ create_security_group () {
         --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
         --query "SecurityGroups[0].GroupId" --output text)
 
-    echo "EC2-SG-ID: ${SG_DATA}" >> ${REFS}
+    write_refs SECURITY_GROUP_NAME
 }
 
 create_subnet_group () {
@@ -101,7 +108,7 @@ create_subnet_group () {
         exit 1;
     fi
 
-    echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ${REFS}
+    write_refs SUBNET_GROUP_NAME
 }
 
 # Extract CIDR Blocks from desired subnets and user these blocks to create 
@@ -119,7 +126,8 @@ authorise_subnets (){
             --cidr ${cidr};
     done
 
-    echo "SNG-CIDR: ${SUBNET_CIDR}" >> ${REFS}
+    #TODO Can't read this back as is, trim and comma sep
+    write_refs SUBNET_CIDR
 }
 
 # Create PostgreSQL database in RDS using the Security Group created above
@@ -137,9 +145,9 @@ create_rds_database () {
         chmod 600 ${RDS_DB_PASSWORD_PATH}
     fi
 
-    if [[ ${TESTRUN} = 'TRUE' ]]; 
-    then DELETION_PROTECTION="--no-deletion-protection";
-    else DELETION_PROTECTION="--deletion-protection";
+    if [[ ${PROTECT} = 'TRUE' ]]; 
+    then DELETION_PROTECTION="--deletion-protection";
+    else DELETION_PROTECTION="--no-deletion-protection";
     fi
 
     RDS_DB_IDENTIFIER=${PREFIX}-rds-${RDS_DB_NAME}
@@ -166,30 +174,15 @@ create_rds_database () {
         --allocated-storage ${RDS_DB_STORAGE} \
         ${DELETION_PROTECTION}
 
-    #Block until the database has been created
-    RDS_STATUS=unidentified
-    while [[ ${BLOCK} == "TRUE" && ${RDS_STATUS} != "available" ]];
-    do
-        RDS_STATUS=$(aws rds describe-db-instances \
-            --db-instance-identifier ${RDS_DB_IDENTIFIER} \
-            --query "DBInstances[].DBInstanceStatus" \
-            --output text)
-        sleep 30
-    done
-    
+    aws rds wait db-instance-available --db-instance-identifier ${RDS_DB_IDENTIFIER}
+
     export RDS_DB_HOST=$(aws rds describe-db-instances \
             --db-instance-identifier ${RDS_DB_IDENTIFIER} \
             --query "DBInstances[].Endpoint.Address" \
             --output text)
 
-    echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ${REFS}
-    echo "RDS-HOST: ${RDS_DB_HOST}" >> ${REFS}
-}
-
-clean_up () {
-    aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot
-    aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
-    aws ec2 delete-security-group --group-name ${SG_DATA}
+    write_refs RDS_DB_IDENTIFIER
+    write_refs RDS_DB_HOST
 }
 
 fetch_vpc_ids
@@ -199,7 +192,5 @@ create_rds_database
 
 # Return the hostname and the user params which might be different is no src was provided
 echo ${RDS_DB_HOST},${RDS_DB_NAME},${RDS_DB_USER},${RDS_DB_PASSWORD_PATH}
-#if [[ ${TESTRUN} = 'TRUE' ]]; 
-#then clean_up;
-#fi
+
 
