@@ -4,6 +4,8 @@ set -e
 
 #Local switches
 PREFIX=vpjr
+REFS=~/.aws/vpjr.refs
+
 TESTRUN="FALSE"
 VPC="NONDEFAULT"
 NETWORK="PUBLIC"
@@ -24,7 +26,7 @@ usage () {
 error () {
     if [[ $? > 0 ]]; 
     then
-        'echo "\"${last_command}\" command failed with exit code $?."'
+        echo "${last_command} command failed with exit code $?"
     fi
 }
 
@@ -35,8 +37,6 @@ if [[ $RDS_DB_NAME == *"help"* ]]; then
     usage
     exit 
 fi
-
-REFS=~/.aws/vpjr.refs
 
 # Currently we have two VPCs that are most easily distinguished by their default status. Read
 # the one that matches the VPC we want to use. 
@@ -54,9 +54,9 @@ fetch_vpc_ids () {
         echo "VPC identifier must be either DEFAULT or NONDEFAULT"
         exit 1
     fi
-}
-echo "VPC-ID: ${VPC_ID}" > ${REFS}
 
+    echo "VPC-ID: ${VPC_ID}" > ${REFS}
+}
 
 create_security_group () {
     #SG is based on VPC so security scope implied
@@ -73,8 +73,8 @@ create_security_group () {
         --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
         --query "SecurityGroups[0].GroupId" --output text)
 
+    echo "EC2-SG-ID: ${SG_DATA}" >> ${REFS}
 }
-echo "EC2-SG-ID: ${SG_DATA}" >> ${REFS}
 
 create_subnet_group () {
         
@@ -100,10 +100,9 @@ create_subnet_group () {
         echo "RDS subnet group VPC ID's don't match ${SNG_VPC_ID} != ${VPC_ID}"
         exit 1;
     fi
+
+    echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ${REFS}
 }
-
-echo "SNG-Name: ${SUBNET_GROUP_NAME}" >> ${REFS}
-
 
 # Extract CIDR Blocks from desired subnets and user these blocks to create 
 # Security Group ingress rules
@@ -119,9 +118,9 @@ authorise_subnets (){
             --port ${RDS_DB_PORT} \
             --cidr ${cidr};
     done
-}
-echo "SNG-CIDR: ${SUBNET_CIDR}" >> ${REFS}
 
+    echo "SNG-CIDR: ${SUBNET_CIDR}" >> ${REFS}
+}
 
 # Create PostgreSQL database in RDS using the Security Group created above
 # and with access to required subnet groups
@@ -168,7 +167,8 @@ create_rds_database () {
         ${DELETION_PROTECTION}
 
     #Block until the database has been created
-    while [[ ${BLOCK} == True && ${RDS_STATUS} != "available" ]];
+    RDS_STATUS=unidentified
+    while [[ ${BLOCK} == "TRUE" && ${RDS_STATUS} != "available" ]];
     do
         RDS_STATUS=$(aws rds describe-db-instances \
             --db-instance-identifier ${RDS_DB_IDENTIFIER} \
@@ -181,9 +181,10 @@ create_rds_database () {
             --db-instance-identifier ${RDS_DB_IDENTIFIER} \
             --query "DBInstances[].Endpoint.Address" \
             --output text)
+
+    echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ${REFS}
+    echo "RDS-HOST: ${RDS_DB_HOST}" >> ${REFS}
 }
-echo "RDS-ID: ${RDS_DB_IDENTIFIER}" >> ${REFS}
-echo "RDS-HOST: ${RDS_DB_HOST}" >> ${REFS}
 
 clean_up () {
     aws rds delete-db-instance --db-instance-identifier ${RDS_DB_IDENTIFIER} --skip-final-snapshot

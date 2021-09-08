@@ -29,7 +29,7 @@ usage () {
 error () {
     if [[ $? > 0 ]]; 
     then
-        'echo "\"${last_command}\" command failed with exit code $?."'
+        echo "${last_command} command failed with exit code $?"
     fi
 }
 
@@ -42,14 +42,17 @@ if [[ $SRC_POD_ADDR == *"help"* ]]; then
 fi
 
 #Check actual value for pass supplied and whether its a path or not
-if [[ $SRC_PG_PASS != $DUMMY_PASS && $SRC_PG_PASS == *"/"* ]]; 
-then 
-    SRC_PG_PASS_PATH=${SRC_PG_PASS}
-    SRC_PG_PASS=$(head -n 1 $SRC_PG_PASS);
-else
-    SRC_PG_PASS_PATH=$~/.aws/pod_pg_password
-    echo ${SRC_PG_PASS}  > ${SRC_DB_PASS_PATH}
-    chmod 600 ${SRC_DB_PASS_PATH}
+if [[ $SRC_PG_PASS != $DUMMY_PASS ]];
+then
+    if [[ $SRC_PG_PASS == *"/"* ]]; 
+    then 
+        SRC_PG_PASS_PATH=${SRC_PG_PASS}
+        SRC_PG_PASS=$(head -n 1 $SRC_PG_PASS_PATH);
+    else
+        SRC_PG_PASS_PATH=~/.aws/pod_pg_password
+        echo ${SRC_PG_PASS} > ${SRC_PG_PASS_PATH}
+        chmod 600 ${SRC_DB_PASS_PATH}
+    fi
 fi
 
 
