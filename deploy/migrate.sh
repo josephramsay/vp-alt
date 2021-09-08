@@ -51,7 +51,7 @@ then
     else
         SRC_PG_PASS_PATH=~/.aws/pod_pg_password
         echo ${SRC_PG_PASS} > ${SRC_PG_PASS_PATH}
-        chmod 600 ${SRC_DB_PASS_PATH}
+        chmod 600 ${SRC_PG_PASS_PATH}
     fi
 fi
 

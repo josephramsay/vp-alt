@@ -174,7 +174,7 @@ create_rds_database () {
             --db-instance-identifier ${RDS_DB_IDENTIFIER} \
             --query "DBInstances[].DBInstanceStatus" \
             --output text)
-        sleep 10
+        sleep 30
     done
     
     export RDS_DB_HOST=$(aws rds describe-db-instances \
