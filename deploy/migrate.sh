@@ -5,7 +5,10 @@ set -e
 PREFIX=metastore
 DUMP_FILE=${PREFIX}.dump.sql
 BUILD_SCRIPT=build.sh
+DUMMY_USER=${PREFIX}_user
 DUMMY_PASS=${PREFIX}_pass
+
+DEF_SRC_PASS_PATH=~/.aws/pod_pg_password
 
 # Passwords can be found on the pod in the env vars.
 # grep for PASS. It will be something like $DBNAME_PASSWORD. Save
@@ -13,10 +16,10 @@ DUMMY_PASS=${PREFIX}_pass
 
 #Set args from migrate script if provided
 SRC_POD_ADDR=${1:-postgres-558b5f557d-bkcwn}
-SRC_PG_DBNAME=${2:-$prefix}
-SRC_PG_USER=${3:-$PREFIX_user}
+SRC_PG_DBNAME=${2:-$PREFIX}
+SRC_PG_USER=${3:-$DUMMY_USER}
 SRC_PG_PASS=${4:-$DUMMY_PASS}
-    
+
 
 usage () {
     echo "Usage: ./migrate.sh <pod-addr> <db-name> <db-user> <pwd-path>"
@@ -52,6 +55,12 @@ then
         SRC_PG_PASS_PATH=~/.aws/pod_pg_password
         echo ${SRC_PG_PASS} > ${SRC_PG_PASS_PATH}
         chmod 600 ${SRC_PG_PASS_PATH}
+    fi
+else
+    #No password supplied (ie. its the dummy, use the def path)
+    if [[ $DEF_SRC_PASS_PATH == *"/"* ]];
+    then
+        SRC_PG_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
     fi
 fi
 

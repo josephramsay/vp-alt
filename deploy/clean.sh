@@ -3,13 +3,7 @@
 set -e
 
 #Local switches
-PREFIX=vpjr
 REFS=~/.aws/vpjr.refs
-
-TESTRUN="FALSE"
-VPC="NONDEFAULT"
-NETWORK="PUBLIC"
-BLOCK="TRUE"
 
 #Set args from migrate script if provided
 RDS_DB_IDENTIFIER=${1}
@@ -32,7 +26,6 @@ error () {
 
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap error EXIT
-
 
 read_refs () {
     . ${REFS}

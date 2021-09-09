@@ -11,10 +11,12 @@ VPC="NONDEFAULT"
 NETWORK="PUBLIC"
 BLOCK="TRUE"
 
+DEF_RDS_PASS_PATH=~/.aws/pod_pg_password
+
 #Set args from migrate script if provided
 RDS_DB_NAME=${1:-RDS_DATA}
 RDS_DB_USER=${2:-vp_user}
-RDS_DB_PASSWORD_PATH=${3:-~/.aws/rds_db_password}
+RDS_DB_PASSWORD_PATH=${3:-$DEF_RDS_PASS_PATH}
 
 usage () {
     echo "Usage: ./build.sh <db-name> <db-user> <pwd-path>"
