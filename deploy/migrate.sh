@@ -8,7 +8,8 @@ BUILD_SCRIPT=build.sh
 DUMMY_USER=${PREFIX}_user
 DUMMY_PASS=${PREFIX}_pass
 
-DEF_SRC_PASS_PATH=~/.aws/pod_pg_password
+DEF_SRC_PASS_PATH=~/.aws/pod_db_password
+DEF_DST_PASS_PATH=~/.aws/rds_db_password
 
 # Passwords can be found on the pod in the env vars.
 # grep for PASS. It will be something like $DBNAME_PASSWORD. Save
@@ -49,27 +50,25 @@ if [[ $SRC_PG_PASS != $DUMMY_PASS ]];
 then
     if [[ $SRC_PG_PASS == *"/"* ]]; 
     then 
+        #The provided pass is actually a path
         SRC_PG_PASS_PATH=${SRC_PG_PASS}
         SRC_PG_PASS=$(head -n 1 $SRC_PG_PASS_PATH);
     else
-        SRC_PG_PASS_PATH=~/.aws/pod_pg_password
-        echo ${SRC_PG_PASS} > ${SRC_PG_PASS_PATH}
-        chmod 600 ${SRC_PG_PASS_PATH}
+        #Assume this is a valid password
+        echo ${SRC_PG_PASS} > ${DEF_SRC_PASS_PATH}
+        chmod 600 ${DEF_SRC_PASS_PATH}
     fi
 else
     #No password supplied (ie. its the dummy, use the def path)
-    if [[ $DEF_SRC_PASS_PATH == *"/"* ]];
-    then
-        SRC_PG_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
-    fi
+    SRC_PG_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
 fi
 
 
 #Setup Destination
-DST_PG_PASS_PATH=~/.aws/rds_pg_password
+
 # Send; database name, database user, database password (indirectly)
 # to new db setup so that naming is consistent for migrating users
-ARGS="${SRC_PG_DBNAME} ${SRC_PG_USER} ${DST_PG_PASS_PATH}"
+ARGS="${SRC_PG_DBNAME} ${SRC_PG_USER} ${DEF_DST_PASS_PATH}"
 IFS=',' read -ra RES <<< $( . ${BUILD_SCRIPT} ${ARGS} | tail -n 1)
 
 DST_PG_HOST=${RES[0]}

@@ -11,7 +11,7 @@ VPC="NONDEFAULT"
 NETWORK="PUBLIC"
 BLOCK="TRUE"
 
-DEF_RDS_PASS_PATH=~/.aws/pod_pg_password
+DEF_RDS_PASS_PATH=~/.aws/rds_db_password
 
 #Set args from migrate script if provided
 RDS_DB_NAME=${1:-RDS_DATA}
