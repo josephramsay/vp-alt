@@ -48,7 +48,7 @@ clean_up () {
         --skip-final-snapshot --delete-automated-backups
     aws rds wait db-instance-deleted --db-instance-identifier ${RDS_DB_IDENTIFIER}
     aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
-    aws ec2 delete-security-group --group-name ${SECURITY_GROUP_NAME}
+    aws ec2 delete-security-group --group-id ${SECURITY_GROUP_ID}
 }
 
 clean_up

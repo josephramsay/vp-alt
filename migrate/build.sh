@@ -78,10 +78,11 @@ create_security_group () {
         --group-name ${SECURITY_GROUP_NAME} \
         --vpc-id ${VPC_ID}
 
-    export SG_DATA=$(aws ec2 describe-security-groups \
+    export SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
         --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
         --query "SecurityGroups[0].GroupId" --output text)
 
+    write_refs SECURITY_GROUP_ID
     write_refs SECURITY_GROUP_NAME
 }
 
@@ -122,11 +123,12 @@ authorise_subnets (){
         --query "Subnets[].CidrBlock[]" --output text )
 
     for cidr in ${SUBNET_CIDR}; do
-        aws ec2 authorize-security-group-ingress --group-id ${SG_DATA} \
+        aws ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} \
             --protocol tcp \
             --port ${RDS_DB_PORT} \
             --cidr ${cidr};
     done
+    SUBNET_CIDR=$(awk '{gsub(/[ ]+/,",")}1' <<<${SUBNET_CIDR})
 
     #TODO Can't read this back as is, trim and comma sep
     write_refs SUBNET_CIDR
@@ -169,7 +171,7 @@ create_rds_database () {
         --db-instance-class ${RDS_DB_CLASS} \
         --engine ${RDS_DB_ENGINE} \
         --db-subnet-group-name ${SUBNET_GROUP_NAME} \
-        --vpc-security-group-ids ${SG_DATA} \
+        --vpc-security-group-ids ${SECURITY_GROUP_ID} \
         --master-username ${RDS_DB_USER} \
         --master-user-password ${RDS_DB_PASS} \
         --backup-retention-period ${RDS_DB_RETENTION} \

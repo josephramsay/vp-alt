@@ -1,0 +1,178 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: {{ CLUSTER_NAME }}
+  region: {{ REGION }}
+  
+managedNodeGroups:
+  - name: dask-scheduler
+    labels: { role: dask-scheduler }
+    instanceType: r5.large
+    spot: true
+    minSize: 0
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 50
+    privateNetworking: true
+  - name: dask-workers-baseline
+    labels: { role: dask }
+    instanceType: t3.medium
+    spot: true
+    minSize: 0
+    maxSize: 100
+    desiredCapacity: 1
+    volumeSize: 50
+    privateNetworking: true
+  - name: dask-workers-himem
+    labels: { role: dask }
+    instanceType: r5.large
+    spot: true
+    minSize: 0
+    maxSize: 100
+    desiredCapacity: 0
+    volumeSize: 50
+    privateNetworking: true
+  - name: trino
+    labels: { role: trino }
+    instanceType: r5.large
+    minSize: 0
+    maxSize: 10
+    desiredCapacity: 2
+    volumeSize: 80
+    privateNetworking: true
+    spot: true
+
+nodeGroups:   
+  - name: devserver-bogdan
+    labels: { role: devserver-bogdan }
+    instanceType: r5.large
+    minSize: 0
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+    iam:
+      withAddonPolicies:
+        efs: true
+  - name: airflow
+    labels: { role: airflow }
+    instanceType: t3.large
+    minSize: 0
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 50
+    privateNetworking: true
+    iam:
+      withAddonPolicies:
+        efs: true
+  - name: devserver-leo-new
+    labels: { role: devserver-leo-new }
+    instanceType: r5.large
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+  - name: devserver-fabian-new
+    labels: { role: devserver-fabian-new }
+    instanceType: r5.large
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+  - name: builders
+    labels: { role: builder }
+    instanceType: r5.large
+    minSize: 0
+    maxSize: 2
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+  - name: workers-himem
+    labels: { role: workers }
+    instanceType: r5.large
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+  # - name: devserver1
+  #   labels: { role: devserver }
+  #   instanceType: r5.large
+  #   minSize: 0
+  #   maxSize: 0
+  #   desiredCapacity: 0
+  #   volumeSize: 80
+  #   privateNetworking: true
+  - name: devserver-ian
+    labels: { role: devserver-ian }
+    instanceType: r5.large
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+  # - name: trino-workers
+  #   labels: { role: trino }
+  #   instanceType: t3.large
+  #   minSize: 1
+  #   maxSize: 1
+  #   desiredCapacity: 1
+  #   volumeSize: 80
+  #   privateNetworking: true
+  - name: superset
+    labels: { role: superset }
+    instanceType: t3.large
+    minSize: 1
+    maxSize: 1
+    desiredCapacity: 1
+    volumeSize: 80
+    privateNetworking: true
+    # - name: dask-workers-test
+    #   labels: { role: dask }
+    #   instanceType: t3.medium
+    #   minSize: 1
+    #   maxSize: 1
+    #   desiredCapacity: 1
+    #   volumeSize: 20
+    #   privateNetworking: true
+    # - name: dask-workers-medium
+    #   labels: { role: dask }
+    #   instanceType: t3.medium
+    #   minSize: 4
+    #   maxSize: 4
+    #   desiredCapacity: 4
+    #   volumeSize: 20
+    #   privateNetworking: true
+    # - name: dask-workers-medium-2
+    #   labels: { role: dask }
+    #   instanceType: t3.medium
+    #   minSize: 16
+    #   maxSize: 16
+    #   desiredCapacity: 16
+    #   volumeSize: 50
+    #   privateNetworking: true
+    # - name: dask-workers-medium-3
+    #   labels: { role: dask }
+    #   instanceType: t3.medium
+    #   minSize: 32
+    #   maxSize: 32
+    #   desiredCapacity: 32
+    #   volumeSize: 20
+    #   privateNetworking: true
+    # - name: jhub
+    #   labels: { role: jhub }
+    #   instanceType: t3.medium
+    #   minSize: 1
+    #   maxSize: 1
+    #   desiredCapacity: 1
+    #   volumeSize: 80
+    #   privateNetworking: true

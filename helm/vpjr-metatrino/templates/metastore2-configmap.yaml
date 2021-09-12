@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metastore2
+  namespace: default
+data:
+  metastore-site.xml.template: |-
+{{ .Files.Get "../configs/metastore-site.xml.template" | nindent 4 }}
