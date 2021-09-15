@@ -1,0 +1,69 @@
+# Hive standalone metastore, keeps track of table metadata.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: metastore2
+  name: metastore2
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metastore2
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: metastore2
+    spec:
+      #ensure deployment is made on the hive-instance managedNodeGroup
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: alpha.eksctl.io/nodegroup-name
+                operator: In
+                values:
+                - hive-instance
+                #metastore-mng
+              - key: alpha.eksctl.io/cluster-name
+                operator: In
+                values:
+                - vp-test2
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      containers:
+      - name: metastore
+        image: scienz/walden-metastore:latest
+        env:
+          - name: POSTGRES_HOST
+            value: vpjr-rds-metastore.cl7kxrjemfld.us-west-1.rds.amazonaws.com
+          - name: METASTORE_PORT
+            value: "9083"
+          - name: POSTGRES_USER
+            value: metastore_user
+          - name: POSTGRES_PASSWORD
+            value: vpjr_34b00b60d2d01416ea77893e1e18c978
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: METASTORE_DB
+            value: "metastore_db"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 9083
+        resources: {}
+        volumeMounts:
+          - mountPath: /apache-hive-metastore-3.1.2-bin/metastore-site.xml.template
+            name: config
+            subPath: metastore-site.xml.template
+            readOnly: false
+      volumes:
+        - name: config
+          configMap:
+            defaultMode: 420
+            name: metastore
+      restartPolicy: Always
+      serviceAccountName: ""
+status: {}

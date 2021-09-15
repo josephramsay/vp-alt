@@ -1,0 +1,39 @@
+kubectl apply --filename metastore2.yaml
+deployment.apps/metastore created
+service/metastore unchanged
+...
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: alpha.eksctl.io/nodegroup-name
+          operator: In
+          values:
+          - hive-instance
+          #metastore-mng
+        - key: alpha.eksctl.io/cluster-name
+          operator: In
+          values:
+          - vp-test2
+
+
+I'm trying to make a test metastore deployment to my new cluster and it looks like it worked but I can't find it and now I'm worried I applied it to the production cluster. I set nodeAffinity but maybe I needed to do more. 
+22:26:01 ubuntu@ip-192-168-48-198 temp kubectl apply --filename metastore2.yaml
+deployment.apps/metastore created
+service/metastore unchanged
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: alpha.eksctl.io/nodegroup-name
+          operator: In
+          values:
+          - hive-instance
+          #metastore-mng
+        - key: alpha.eksctl.io/cluster-name
+          operator: In
+          values:
+          - vp-test2
