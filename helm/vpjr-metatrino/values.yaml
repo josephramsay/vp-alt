@@ -4,12 +4,6 @@
 
 replicaCount: 1
 
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
-
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
@@ -35,16 +29,17 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+postgres:
+  host: vpjr_somepostgreshost
+  port: 5432
+  user: vpjr_someuser
+  pass: vpjr_somethingsecret
+
 metastore:
-  postgres:
-    host: vpjr_somepostgreshost
-    port: 5432
-    user: vpjr_someuser
-    pass: vpjr_somethingsecret
-  self:
-    post: 9803
-    user: vpjr_anotheruser
-    pass: vpjr_somethingelsesecret
+  port: 9803
+  user: vpjr_anotheruser
+  pass: vpjr_somethingelsesecret
 
 service:
   type: ClusterIP
