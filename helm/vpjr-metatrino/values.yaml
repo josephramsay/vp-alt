@@ -35,6 +35,16 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+metastore:
+  postgres:
+    host: vpjr_somepostgreshost
+    port: 5432
+    user: vpjr_someuser
+    pass: vpjr_somethingsecret
+  self:
+    post: 9803
+    user: vpjr_anotheruser
+    pass: vpjr_somethingelsesecret
 
 service:
   type: ClusterIP

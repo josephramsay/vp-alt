@@ -39,20 +39,20 @@ spec:
         image: scienz/walden-metastore:latest
         env:
           - name: POSTGRES_HOST
-            value: vpjr-rds-metastore.cl7kxrjemfld.us-west-1.rds.amazonaws.com
+            value: {{ .Values.postgres.host }}
           - name: METASTORE_PORT
-            value: "9083"
+            value: {{ .Values.metastore.port }}
           - name: POSTGRES_USER
-            value: metastore_user
+            value: {{ .Values.postgres.user }}
           - name: POSTGRES_PASSWORD
-            value: vpjr_34b00b60d2d01416ea77893e1e18c978
+            value: {{ .Values.postgres.pass }}
           - name: POSTGRES_PORT
-            value: "5432"
+            value: {{ .Values.postgres.port }}
           - name: METASTORE_DB
-            value: "metastore_db"
+            value: {{ .Values.metastore.db }}
         imagePullPolicy: "Always"
         ports:
-        - containerPort: 9083
+        - containerPort: {{ .Values.metastore.port }}
         resources: {}
         volumeMounts:
           - mountPath: /apache-hive-metastore-3.1.2-bin/metastore-site.xml.template

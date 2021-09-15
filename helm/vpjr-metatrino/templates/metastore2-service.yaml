@@ -12,21 +12,5 @@ spec:
   - port: 9083
   selector:
     app: metastore2
-  template:
-    spec: 
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: alpha.eksctl.io/nodegroup-name
-                operator: In
-                values:
-                - hive-instance
-                #metastore-mng
-              - key: alpha.eksctl.io/cluster-name
-                operator: In
-                values:
-                - vp-test2
 status:
   loadBalancer: {}
