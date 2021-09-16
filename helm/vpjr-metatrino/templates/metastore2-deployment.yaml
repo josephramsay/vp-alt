@@ -5,7 +5,7 @@ metadata:
   labels:
     app: metastore2
   name: metastore2
-  namespace: kube-system
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -17,23 +17,10 @@ spec:
       labels:
         app: metastore2
     spec:
-      #ensure deployment is made on the hive-instance managedNodeGroup
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: alpha.eksctl.io/nodegroup-name
-                operator: In
-                values:
-                - hive-instance
-                #metastore-mng
-              - key: alpha.eksctl.io/cluster-name
-                operator: In
-                values:
-                - vp-test2
       nodeSelector:
         kubernetes.io/arch: amd64
+        alpha.eksctl.io/cluster-name: vp-metatrino
+        alpha.eksctl.io/nodegroup-name: metastore-mng
       containers:
       - name: metastore
         image: scienz/walden-metastore:latest
@@ -41,13 +28,13 @@ spec:
           - name: POSTGRES_HOST
             value: {{ .Values.postgres.host }}
           - name: METASTORE_PORT
-            value: {{ .Values.metastore.port }}
+            value: "{{ .Values.metastore.port }}"
           - name: POSTGRES_USER
             value: {{ .Values.postgres.user }}
           - name: POSTGRES_PASSWORD
             value: {{ .Values.postgres.pass }}
           - name: POSTGRES_PORT
-            value: {{ .Values.postgres.port }}
+            value: "{{ .Values.postgres.port }}"
           - name: METASTORE_DB
             value: {{ .Values.metastore.db }}
         imagePullPolicy: "Always"
@@ -63,7 +50,7 @@ spec:
         - name: config
           configMap:
             defaultMode: 420
-            name: metastore
+            name: metastore2
       restartPolicy: Always
       serviceAccountName: ""
 status: {}

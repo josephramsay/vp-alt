@@ -47,7 +47,7 @@ fi
 
 #Setup Clusters
 setup_cluster () {    
-    CLUSTER_NAME=vp-test2
+    CLUSTER_NAME=vp-metatrino
     REGION=us-west-1
     
     CONFIG_FILE=vpjr-metatrino-cluster.yaml

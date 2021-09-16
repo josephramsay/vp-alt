@@ -32,13 +32,16 @@ securityContext: {}
 
 postgres:
   host: vpjr_somepostgreshost
+  name: vpjr_somepgdbname
   port: 5432
   user: vpjr_someuser
   pass: vpjr_somethingsecret
 
 metastore:
+  host: vpjr_idontthinkweneedahost
+  name: vpjr_somemetadbname
   port: 9803
-  user: vpjr_anotheruser
+  user: vpjr_someotheruser
   pass: vpjr_somethingelsesecret
 
 service:
