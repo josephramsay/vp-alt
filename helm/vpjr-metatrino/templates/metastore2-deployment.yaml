@@ -22,21 +22,45 @@ spec:
         alpha.eksctl.io/cluster-name: vp-metatrino
         alpha.eksctl.io/nodegroup-name: metastore-mng
       containers:
-      - name: metastore
+      - name: metastore2
         image: scienz/walden-metastore:latest
         env:
           - name: POSTGRES_HOST
-            value: {{ .Values.postgres.host }}
-          - name: METASTORE_PORT
-            value: "{{ .Values.metastore.port }}"
-          - name: POSTGRES_USER
-            value: {{ .Values.postgres.user }}
-          - name: POSTGRES_PASSWORD
-            value: {{ .Values.postgres.pass }}
+            valueFrom:
+              secretKeyRef:
+                name: metatrino-secret
+                key: rds-pg-host
+          - name: POSTGRES_NAME
+            valueFrom:
+              secretKeyRef:
+                name: metatrino-secret
+                key: rds-pg-name
           - name: POSTGRES_PORT
             value: "{{ .Values.postgres.port }}"
-          - name: METASTORE_DB
-            value: {{ .Values.metastore.db }}
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: metatrino-secret
+                key: rds-pg-user
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: metatrino-secret
+                key: rds-pg-pass
+          - name: METASTORE_NAME
+            value: {{ .Values.metastore.name }}
+          - name: METASTORE_PORT
+            value: "{{ .Values.metastore.port }}"
+          - name: S3_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: s3-vibrant-dragon
+                key: id
+          - name: S3_ACCESS_KEY_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: s3-vibrant-dragon
+                key: secret
         imagePullPolicy: "Always"
         ports:
         - containerPort: {{ .Values.metastore.port }}
