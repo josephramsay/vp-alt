@@ -3,7 +3,7 @@ kind: ClusterConfig
 metadata:
   name: vp-metatrino
   region: us-west-1
-nodeGroups:
+managedNodeGroups:
   - name: metastore-mng
     labels: { role: metastore }
     instanceType: t3.large
@@ -11,7 +11,8 @@ nodeGroups:
     maxSize: 5
     desiredCapacity: 1
     volumeSize: 80
-    privateNetworking: true  
+    privateNetworking: true 
+nodeGroups: 
   - name: trino-mng
     labels: { role: trino }
     instanceType: t3.large
