@@ -11,7 +11,9 @@ spec:
   selector:
     matchLabels:
       app: metastore2
-  strategy: {}
+  strategy: 
+    rollingUpdate: 
+      maxUnavailable: 20
   template:
     metadata:
       labels:
@@ -51,16 +53,6 @@ spec:
             value: {{ .Values.metastore.name }}
           - name: METASTORE_PORT
             value: "{{ .Values.metastore.port }}"
-          - name: S3_ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                name: s3-vibrant-dragon
-                key: id
-          - name: S3_ACCESS_KEY_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: s3-vibrant-dragon
-                key: secret
         imagePullPolicy: "Always"
         ports:
         - containerPort: {{ .Values.metastore.port }}
