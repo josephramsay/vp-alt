@@ -5,4 +5,4 @@ metadata:
   namespace: default
 data:
   metastore-site.xml.template: |-
-{{ .Files.Get "../configs/metastore-site.xml.template" | nindent 4 }}
+{{ .Files.Get "configs/metastore-site.xml.template" | nindent 4 }}
