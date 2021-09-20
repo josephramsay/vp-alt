@@ -26,6 +26,8 @@ spec:
       containers:
       - name: metastore2
         image: scienz/walden-metastore:latest
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
         env:
           - name: POSTGRES_HOST
             valueFrom:

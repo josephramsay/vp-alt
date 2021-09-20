@@ -1,5 +1,9 @@
 #!/bin/bash
 
+
+CLUSTER_NAME=vp-metatrino
+REGION=us-west-1
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 RELEASE_NAME=$(basename $SCRIPT_DIR)
 TARGET_NAMESPACE=vpjr
@@ -47,8 +51,7 @@ fi
 
 #Setup Clusters
 setup_cluster () {    
-    CLUSTER_NAME=vp-metatrino
-    REGION=us-west-1
+
     
     CONFIG_FILE=vpjr-metatrino-cluster.yaml
 
@@ -97,11 +100,15 @@ helm_deploy_applications (){
 kube_deploy_applications (){
     #bitmap select which ops to run
     if [ $(($M_OR_T&1)) -gt 0 ]; then
-        kubectl apply --filename metastore2.yaml
+        #kubectl apply --filename metastore2.yaml
+        helm install --debug ${CLUSTER_NAME} ${SCRIPT_DIR}${CLUSTER_NAME}
+        #/home/ubuntu/git/vp-alt/helm/vpjr-metatrino
     fi
     if [ $(($M_OR_T&2)) -gt 0 ]; then
         echo kubectl apply --filename trino2.yaml
     fi
+
+
 }
 
 

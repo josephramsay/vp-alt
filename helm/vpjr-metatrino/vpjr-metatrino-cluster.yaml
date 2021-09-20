@@ -12,7 +12,6 @@ managedNodeGroups:
     desiredCapacity: 1
     volumeSize: 80
     privateNetworking: true 
-nodeGroups: 
   - name: trino-mng
     labels: { role: trino }
     instanceType: t3.large
