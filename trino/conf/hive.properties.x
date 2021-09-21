@@ -1,5 +1,5 @@
 connector.name=hive-hadoop2
-#hive.metastore.uri=thrift://vpjr-rds-metastore.cl7kxrjemfld.us-west-1.rds.amazonaws.com:5432
+#hive.metastore.uri=thrift://vpjr-metatrino.cl7kxrjemfld.us-west-1.rds.amazonaws.com:5432
 #connector.name=hive-hadoop2
 hive.metastore.uri=thrift://metastore:9083
 hive.config.resources=/trino-server-356/etc/catalog/core-site.xml
