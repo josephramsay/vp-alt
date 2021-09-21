@@ -2,20 +2,20 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: trino2
+  name: properties-trino2
   namespace: default
 data:
   node.properties.template: |
-{{ .Files.Get "../configs/node.properties.template" | indent 4 }}
+{{ .Files.Get "configs/node.properties.template" | indent 4 }}
   jvm.config: | 
-{{ .Files.Get "../configs/jvm.config" | indent 4 }}
+{{ .Files.Get "configs/jvm.config" | indent 4 }}
   config.properties.template: | 
-{{ .Files.Get "../configs/config.properties.template" | indent 4 }}
+{{ .Files.Get "configs/config.properties.template" | indent 4 }}
   log.properties: |
-{{ .Files.Get "../configs/log.properties" | indent 4 }}
+{{ .Files.Get "configs/log.properties" | indent 4 }}
   hive.properties: |
-{{ .Files.Get "../configs/hive.properties" | indent 4 }}  
+{{ .Files.Get "configs/hive.properties" | indent 4 }}  
   tiledb.properties: |
 {{ .Files.Get "configs/tiledb.properties" | indent 4 }}
   core-site.xml: |
-{{ .Files.Get "../catalog/core-site.xml" | indent 4 }}
+{{ .Files.Get "configs/core-site.xml" | indent 4 }}
