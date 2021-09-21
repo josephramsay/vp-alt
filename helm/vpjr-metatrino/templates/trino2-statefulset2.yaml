@@ -96,6 +96,6 @@ spec:
         resources: {}
         volumeMounts:
           - name: pre-install
-            mountPath: /trino-server-360/etc
+            mountPath: /trino-server-356/etc
       restartPolicy: Always
       serviceAccountName: ""

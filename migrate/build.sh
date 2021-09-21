@@ -8,6 +8,7 @@ REFS=~/.aws/vpjr.refs
 
 PROTECT="FALSE"
 VPC="NONDEFAULT"
+VPCI=0
 NETWORK="PUBLIC"
 BLOCK="TRUE"
 
@@ -47,7 +48,7 @@ write_refs () {
     fi
 }
 
-# Currently we have two VPCs that are most easily distinguished by their default status. Read
+# Currently we have three (no longer 2) VPCs that are most easily distinguished by their default status. Read
 # the one that matches the VPC we want to use. 
 # NB. This will probably change in the future
 fetch_vpc_ids () {
@@ -63,8 +64,9 @@ fetch_vpc_ids () {
         echo "VPC identifier must be either DEFAULT or NONDEFAULT"
         exit 1
     fi
-
-    write_refs NEW VPC_ID
+    VPC_ID_CS=$(awk '{gsub(/[ ]+/,",")}1' <<<${VPC_ID})
+    write_refs NEW VPC_ID_CS
+    VPC_ID_A=( $VPC_ID )
 }
 
 create_security_group () {
@@ -76,10 +78,10 @@ create_security_group () {
     aws ec2 create-security-group \
         --description "${SECURITY_GROUP_DESC}" \
         --group-name ${SECURITY_GROUP_NAME} \
-        --vpc-id ${VPC_ID}
+        --vpc-id ${VPC_ID_A[$VPCI]}
 
     export SECURITY_GROUP_ID=$(aws ec2 describe-security-groups \
-        --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID} \
+        --filters Name=group-name,Values=${SECURITY_GROUP_NAME} Name=vpc-id,Values=${VPC_ID_A[$VPCI]} \
         --query "SecurityGroups[0].GroupId" --output text)
 
     write_refs SECURITY_GROUP_ID
@@ -105,9 +107,9 @@ create_subnet_group () {
     --filters Name=group-name,Values=${SUBNET_GROUP_NAME} \
     --query "DBSubnetGroups[0].VpcId" --output text)
 
-    if [[ ${SNG_VPC_ID} != ${VPC_ID} ]];
+    if [[ ${SNG_VPC_ID} != ${VPC_ID_A[$VPCI]} ]];
     then 
-        echo "RDS subnet group VPC ID's don't match ${SNG_VPC_ID} != ${VPC_ID}"
+        echo "RDS subnet group VPC ID's don't match ${SNG_VPC_ID} != ${VPC_ID_A[$VPCI]}"
         exit 1;
     fi
 
