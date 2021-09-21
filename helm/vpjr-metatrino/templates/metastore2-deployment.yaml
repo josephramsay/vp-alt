@@ -34,7 +34,7 @@ spec:
               secretKeyRef:
                 name: metatrino-secret
                 key: rds-pg-host
-          - name: POSTGRES_NAME
+          - name: POSTGRES_DBNAME
             valueFrom:
               secretKeyRef:
                 name: metatrino-secret
