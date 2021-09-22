@@ -15,7 +15,5 @@ data:
 {{ .Files.Get "configs/log.properties" | indent 4 }}
   hive.properties: |
 {{ .Files.Get "configs/hive.properties" | indent 4 }}  
-  tiledb.properties: |
-{{ .Files.Get "configs/tiledb.properties" | indent 4 }}
   core-site.xml: |
 {{ .Files.Get "configs/core-site.xml" | indent 4 }}
