@@ -1,19 +1,19 @@
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 metadata:
-  name: vp-metatrino
+  name: vp-test
   region: us-west-1
 managedNodeGroups:
   - name: metastore-mng
-    labels: { role: metastore }
+    labels: {role: metastore}
     instanceType: t3.large
     minSize: 1
     maxSize: 5
     desiredCapacity: 1
     volumeSize: 80
-    privateNetworking: true 
+    privateNetworking: true
   - name: trino-mng
-    labels: { role: trino }
+    labels: {role: trino}
     instanceType: t3.large
     minSize: 1
     maxSize: 1
@@ -21,7 +21,7 @@ managedNodeGroups:
     volumeSize: 80
     privateNetworking: true
   - name: trino-worker-mng
-    labels: { role: trino }
+    labels: {role: trino}
     instanceType: t3.large
     minSize: 1
     maxSize: 1

@@ -4,7 +4,7 @@ set -e
 
 # Read utility functions
 UTIL_SCRIPT=util.sh
-. ${UTIL_SCRIPT}
+. ${SCRIPT_DIR}/${UTIL_SCRIPT}
 
 #Set args from migrate script if provided
 RDS_DB_IDENTIFIER=${1}
@@ -37,6 +37,8 @@ clean_up () {
     aws rds wait db-instance-deleted --db-instance-identifier ${RDS_DB_IDENTIFIER}
     aws rds delete-db-subnet-group --db-subnet-group-name ${SUBNET_GROUP_NAME}
     aws ec2 delete-security-group --group-id ${SECURITY_GROUP_ID}
+
+    eksctl 
 }
 
 clean_up

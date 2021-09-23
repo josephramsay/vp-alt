@@ -4,7 +4,7 @@ set -e
 
 # Read utility functions
 UTIL_SCRIPT=util.sh
-. ${UTIL_SCRIPT}
+. ${SCRIPT_DIR}/${UTIL_SCRIPT}
 
 PROTECT="FALSE"
 #choose the nodefault vpcs
@@ -39,8 +39,6 @@ trap finally EXIT
 # NB. This will probably change in the future
 fetch_vpc_ids () {
     export CLUSTER_NAME=vp-test
-    #export VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=eksctl-${CLUSTER_NAME}-cluster/VPC" --query "Vpcs[0].VpcId" --output text)
-    #echo "VPC ID: ${VPC_ID}"
 
     if [[ ${VPC} = 'DEFAULT' ]]; then 
         VPC_ID=$(aws ec2 describe-vpcs --query "Vpcs[?IsDefault].VpcId" --output text)

@@ -3,33 +3,31 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: metastore2
-  name: metastore2
-  namespace: default
+    app: {{ .Values.metastore.name }}
+  name: {{ .Values.metastore.name }}
+  namespace: {{ .Values.namespace.name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: metastore2
+      app: {{ .Values.metastore.name }}
   strategy: 
     rollingUpdate: 
       maxUnavailable: 20
   template:
     metadata:
       labels:
-        app: metastore2
+        app: {{ .Values.metastore.name }}
     spec:
       nodeSelector:
         kubernetes.io/arch: amd64
-        alpha.eksctl.io/cluster-name: vp-metatrino
-        alpha.eksctl.io/nodegroup-name: metastore-mng
+        alpha.eksctl.io/cluster-name: {{ .Values.cluster.name }}
+        alpha.eksctl.io/nodegroup-name: {{ .Values.metastore.nodegroupname }}
       imagePullSecrets:
       - name: regcred
       containers:
-      - name: metastore2
-        image: scienz/walden-metastore:latest
-        #command: [ "/bin/bash", "-c", "--" ]
-        #args: [ "while true; do sleep 30; done;" ]
+      - name: {{ .Values.metastore.name }}
+        image: {{ .Values.metastore.image }}
         env:
           - name: POSTGRES_HOST
             valueFrom:
@@ -80,7 +78,7 @@ spec:
         - name: config
           configMap:
             defaultMode: 420
-            name: metastore2
+            name: {{ .Values.metastore.name }}
       restartPolicy: Always
       serviceAccountName: ""
 status: {}

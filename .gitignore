@@ -132,6 +132,10 @@ kube/*
 docker/*
 *.swp
 *.secret
-helm/vpjr-metatrino/reserve.templates/*
-helm/vpjr-metatrino/reserve.configs/*
-helm/vpjr-metatrino/reserve.configs/postgresql.properties
+
+# Node
+node_modules
+yarn.lock
+
+# User
+**/NOTES

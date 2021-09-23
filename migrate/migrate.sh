@@ -3,8 +3,9 @@
 set -e
 
 # Read utility functions
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 UTIL_SCRIPT=util.sh
-. ${UTIL_SCRIPT}
+. ${SCRIPT_DIR}/${UTIL_SCRIPT}
 BUILD_SCRIPT=build.sh
 META_SCRIPT=meta.sh
 DUMP_FILE=${PROJECT_NAME}.dump.sql
@@ -41,6 +42,7 @@ if [[ $1 == *"help"* ]]; then
 fi
 
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+trap error_report ERR
 trap finally EXIT
 
 #Check actual value for pass supplied and whether its a path or not
@@ -60,6 +62,10 @@ else
     #No password supplied (ie. its the dummy, use the def path)
     POD_DB_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
 fi
+
+
+capture_namespace
+switch_namespace
 
 #Setup Destination
 
@@ -85,3 +91,5 @@ PGPASSWORD=${RDS_DB_PASSWORD} psql -U ${RDS_DB_USER} \
 # Build Metastore/Trino
 ARGS="${RDS_DB_HOST} ${RDS_DB_NAME} ${RDS_DB_PASSWORD_PATH}"
 IFS=',' read -ra RES <<< $( . ${META_SCRIPT} ${ARGS} | tail -n 1)
+
+reset_namespace

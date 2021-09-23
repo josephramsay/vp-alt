@@ -4,13 +4,13 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: metastore2
-  name: metastore2
-  namespace: default
+    app: {{ .Values.metastore.name }}
+  name: {{ .Values.metastore.name }}
+  namespace: {{ .Values.namespace.name }}
 spec:
   ports:
-  - port: 9083
+  - port: {{ .Values.metastore.port }}
   selector:
-    app: metastore2
+    app: {{ .Values.metastore.name }}
 status:
   loadBalancer: {}
