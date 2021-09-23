@@ -27,6 +27,14 @@ To remove the security group, subnet group and RDS database created during build
 
 The arguments identify the RDS instance ID, the subnet group and the security group. They are optional because these values are stored in the refs file and will be imported if not provided
 
+__Setup Metastore and Trino__
+
+The script `meta.sh` runs a helm chart install that sets up one metastore instance, a trino coordinator and up to four trino workers. This script is called by the migration during migration
+
+```bash
+./meta.sh [ <project-name> <rds-host> <rds-password-path> ]
+```
+
 __HACK - postgres user__
 
 By default super user access is not provided on container object database instances for security reasons. In practise, in order to dump a database for migration, we must run the `pg_dump` command as a privileged user. One process to achieve this required level of access is outlined here.  

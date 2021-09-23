@@ -2,8 +2,9 @@
 
 set -e
 
-#Local switches
-REFS=~/.aws/vpjr.refs
+# Read utility functions
+UTIL_SCRIPT=util.sh
+. ${UTIL_SCRIPT}
 
 #Set args from migrate script if provided
 RDS_DB_IDENTIFIER=${1}
@@ -26,17 +27,6 @@ error () {
 
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 trap error EXIT
-
-read_refs () {
-    . ${REFS}
-}
-
-write_refs () {
-    if [[ ${1} == "NEW" && -n ${2} ]]; 
-    then eval 'echo $2=$'$2 > ${REFS};
-    else eval 'echo $1=$'$1 >> ${REFS};
-    fi
-}
 
 clean_up () {
     # If the identifier arguments haven't been provided as args read them from the refs file
