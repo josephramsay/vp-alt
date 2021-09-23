@@ -7,11 +7,11 @@ UTIL_SCRIPT=util.sh
 . ${UTIL_SCRIPT}
 BUILD_SCRIPT=build.sh
 META_SCRIPT=meta.sh
-DUMP_FILE=${PREFIX}.dump.sql
+DUMP_FILE=${PROJECT_NAME}.dump.sql
 
-PREFIX=metastore
-DUMMY_USER=${PREFIX}_user
-DUMMY_PASS=${PREFIX}_pass
+DUMMY_USER=${PROJECT}_user
+DUMMY_PASS=${PROJECT}_pass
+DUMMY_NAME=${PROJECT}_db
 
 # Passwords can be found on the pod in the env vars.
 # grep for PASS. It will be something like $DBNAME_PASSWORD. Save
@@ -19,33 +19,29 @@ DUMMY_PASS=${PREFIX}_pass
 
 #Set args from migrate script if provided
 POD_DB_HOST=${1:-postgres-558b5f557d-bkcwn}
-POD_DB_NAME=${2:-$PREFIX}
+POD_DB_NAME=${2:-$DUMMY_NAME}
 POD_DB_USER=${3:-$DUMMY_USER}
 POD_DB_PASS=${4:-$DUMMY_PASS}
 
 
 usage () {
-    echo "Usage: ./migrate.sh <pod-addr> <db-name> <db-user> <pwd-path>"
+    echo "Main entry point to the datbase migration function. Dumps contents of an existing Kubernetes pod \
+    database and builds and populates new RDS instance. Additionally builds metastore and trino services to \
+    access this database"
+    echo "Usage: ./migrate.sh <pod-addr> <db-name> <db-user> <db-pwd-path>"
     echo "   pod-addr: Location of the Pod for kubectl"
     echo "   db-name: Name of the database to connect to"
     echo "   db-user: Name of the database user (with pg_dump access)"
-    echo "   pwd: <db-user> password or the location of the file where it is stored"
+    echo "   db-pwd-path: <db-user> password OR the location of the file where it is stored"
 }
 
-error () {
-    if [[ $? > 0 ]]; 
-    then
-        echo "${last_command} command failed with exit code $?"
-    fi
-}
-
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-trap error EXIT
-
-if [[ $POD_DB_HOST == *"help"* ]]; then
+if [[ $1 == *"help"* ]]; then
     usage
     exit
 fi
+
+trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+trap finally EXIT
 
 #Check actual value for pass supplied and whether its a path or not
 if [[ $POD_DB_PASS != $DUMMY_PASS ]];
@@ -64,17 +60,6 @@ else
     #No password supplied (ie. its the dummy, use the def path)
     POD_DB_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
 fi
-
-TARGET_NAMESPACE=default
-ORIG_NAMESPACE=$(kubectl config view --minify --output 'jsonpath={..namespace}')
-if [ -z "$ORIG_NAMESPACE" ]; then
-    ORIG_NAMESPACE=$TARGET_NAMESPACE
-fi
-
-reset_namespace() {
-    echo "Switching back to namespace: $ORIG_NAMESPACE"
-    echo kubectl config set-context --current --namespace=$ORIG_NAMESPACE
-}
 
 #Setup Destination
 

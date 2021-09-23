@@ -18,15 +18,13 @@ usage () {
     echo "   pwd-path: Location of the file to store the password for <db-user>"
 }
 
-error () {
-    if [[ $? > 0 ]]; 
-    then
-        echo "${last_command} command failed with exit code $?"
-    fi
-}
+if [[ $1 == *"help"* ]]; then
+    usage
+    exit
+fi
 
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-trap error EXIT
+trap finally EXIT
 
 clean_up () {
     # If the identifier arguments haven't been provided as args read them from the refs file

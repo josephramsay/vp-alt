@@ -6,9 +6,6 @@ set -e
 UTIL_SCRIPT=util.sh
 . ${UTIL_SCRIPT}
 
-#Local switches
-PREFIX=vpjr
-
 PROTECT="FALSE"
 #choose the nodefault vpcs
 VPC="NONDEFAULT"
@@ -18,8 +15,8 @@ NETWORK="PUBLIC"
 BLOCK="TRUE"
 
 #Set args from migrate script if provided
-RDS_DB_NAME=${1:-RDS_DATA}
-RDS_DB_USER=${2:-vp_user}
+RDS_DB_NAME=${1:-metastore_db}
+RDS_DB_USER=${2:-metastore_user}
 RDS_DB_PASS_PATH=${3:-$DEF_RDS_PASS_PATH}
 
 usage () {
@@ -29,22 +26,13 @@ usage () {
     echo "   pwd-path: Location of the file to store the password for <db-user>"
 }
 
-error () {
-    if [[ $? > 0 ]]; 
-    then
-        echo "${last_command} command failed with exit code $?"
-    fi
-}
-
-trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
-trap error EXIT
-
-if [[ $RDS_DB_NAME == *"help"* ]]; then
+if [[ $1 == *"help"* ]]; then
     usage
     exit 
 fi
 
-
+trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
+trap finally EXIT
 
 # Currently we have three (no longer 2) VPCs that are most easily distinguished by their default status. Read
 # the one that matches the VPC we want to use. 
@@ -71,8 +59,8 @@ fetch_vpc_ids () {
 
 create_security_group () {
     #SG is based on VPC so security scope implied
-    SECURITY_GROUP_NAME="${PREFIX}-sg-${RDS_DB_NAME}"
-    SECURITY_GROUP_DESC="Security Group for ${RDS_DB_NAME}"
+    SECURITY_GROUP_NAME="${PREFIX}-sg-${PROJECT}"
+    SECURITY_GROUP_DESC="Security Group for ${PROJECT}"
     #TODO from cr-sec-grp to cr-db-sec-grp?
     #aws rds create-db-security-group \
     aws ec2 create-security-group \
@@ -95,8 +83,8 @@ create_subnet_group () {
         --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
         --query "Subnets[*].SubnetId" --output json | jq -c .)
 
-    SUBNET_GROUP_NAME="${PREFIX}-sng-${RDS_DB_NAME}"
-    SUBNET_GROUP_DESC="Subnet Group for ${RDS_DB_NAME}"
+    SUBNET_GROUP_NAME="${PREFIX}-sng-${PROJECT}"
+    SUBNET_GROUP_DESC="Subnet Group for ${PROJECT}"
 
     aws rds create-db-subnet-group \
         --db-subnet-group-name ${SUBNET_GROUP_NAME} \
@@ -156,8 +144,7 @@ create_rds_database () {
     else DELETION_PROTECTION="--no-deletion-protection";
     fi
 
-    RDS_DB_IDENTIFIER=${PREFIX}-rds-${RDS_DB_NAME}
-    #RDS_DB_NAME=RDS_DATA2
+    RDS_DB_IDENTIFIER=${PREFIX}-rds-${PROJECT}
     RDS_DB_ENGINE=postgres
     RDS_DB_PORT=5432
     RDS_DB_CLASS=db.t3.micro
