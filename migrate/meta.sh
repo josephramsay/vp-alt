@@ -31,18 +31,21 @@ trap finally EXIT
 
 
 setup_cluster () {  
+    # Its a bit risky to run some of this so commented out for now and will be done manually
 
-    CLUSTER_EXISTS=$(eksctl get clusters  --output json | jq --arg C "$CLUSTER_NAME" 'any(.[].metadata.name; . == $C)')
-    if [[ ${CLUSTER_EXISTS} != "true" ]]; then
-        eksctl create cluster --region ${REGION} --name ${CLUSTER_NAME} --version 1.19 --without-nodegroup
-    fi
+    #CLUSTER_EXISTS=$(eksctl get clusters  --output json | jq --arg C "$CLUSTER_NAME" 'any(.[].metadata.name; . == $C)')
+    #if [[ ${CLUSTER_EXISTS} != "true" ]]; then
+    #    eksctl create cluster --region ${REGION} --name ${CLUSTER_NAME} --version 1.19 --without-nodegroup
+    #fi
     aws eks --region ${REGION} update-kubeconfig --name ${CLUSTER_NAME}
 
-    REQUESTED_NODE_GROUPS=`yq e ".managedNodeGroups[].name" ${CLUSTER_CONFIG_FILE}`
-    NODE_GROUP_EXISTS=$(eksctl get nodegroups --cluster ${CLUSTER_NAME} --output json | jq --arg R "${REQUESTED_NODE_GROUPS}" 'map(in($R))')
-    
-    yq e -i ".metadata.name = \"${CLUSTER_NAME}\" | .metadata.region = \"${REGION}\"" ${CLUSTER_CONFIG_FILE}
-    eksctl create nodegroup --config-file=${CLUSTER_CONFIG_FILE}
+
+    #REQUESTED_NODE_GROUPS=$(yq e -j "[].managedNodeGroups[].name]" ${CLUSTER_CONFIG_FILE})
+    #NODE_GROUP_EXISTS=$(eksctl get nodegroups --cluster ${CLUSTER_NAME} --output json | jq --arg R "${REQUESTED_NODE_GROUPS}" '.[].Name | IN($R[]) | any')
+    #if [[ ${NODE_GROUP_EXISTS} != "true" ]]; then
+        yq e -i ".metadata.name = \"${CLUSTER_NAME}\" | .metadata.region = \"${REGION}\"" ${CLUSTER_CONFIG_FILE}
+        eksctl create nodegroup --config-file=${CLUSTER_CONFIG_FILE}
+    #fi
 }
 
 create_secrets (){
@@ -70,8 +73,8 @@ uninstall () {
     helm uninstall ${PROJECT_NAME}
 }
 
-#setup_cluster
 create_secrets
+setup_cluster
 install
 uninstall
 
