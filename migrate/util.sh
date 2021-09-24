@@ -9,6 +9,7 @@ DEF_RDS_PASS_PATH=~/.aws/rds_db_password
 CLUSTER_NAME=vp-test
 REGION=us-west-1
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 RELEASE_NAME=$(basename $SCRIPT_DIR)
 PREFIX=vp-di
 PROJECT=metastore

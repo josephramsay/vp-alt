@@ -90,7 +90,7 @@ create_subnet_group () {
         --subnet-ids ${SUBNET_IDS}
         
     SNG_VPC_ID=$(aws rds describe-db-subnet-groups \
-    --filters Name=group-name,Values=${SUBNET_GROUP_NAME} \
+    --db-subnet-group-name ${SUBNET_GROUP_NAME} \
     --query "DBSubnetGroups[0].VpcId" --output text)
 
     if [[ ${SNG_VPC_ID} != ${VPC_ID_A[$VPCI]} ]];
@@ -98,7 +98,7 @@ create_subnet_group () {
         echo "RDS subnet group VPC ID's don't match ${SNG_VPC_ID} != ${VPC_ID_A[$VPCI]}"
         exit 1;
     fi
-
+    write_refs SNG_VPC_ID
     write_refs SUBNET_GROUP_NAME
 }
 
