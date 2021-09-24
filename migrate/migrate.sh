@@ -55,12 +55,12 @@ then
         POD_DB_PASS=$(head -n 1 $POD_DB_PASS_PATH);
     else
         #Assume this is a valid password
-        echo ${POD_DB_PASS} > ${DEF_SRC_PASS_PATH}
-        chmod 600 ${DEF_SRC_PASS_PATH}
+        echo ${POD_DB_PASS} > ${DEF_POD_PASS_PATH}
+        chmod 600 ${DEF_POD_PASS_PATH}
     fi
 else
     #No password supplied (ie. its the dummy, use the def path)
-    POD_DB_PASS=$(head -n 1 $DEF_SRC_PASS_PATH);
+    POD_DB_PASS=$(head -n 1 $DEF_POD_PASS_PATH);
 fi
 
 
