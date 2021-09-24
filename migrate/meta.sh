@@ -3,16 +3,17 @@
 set -e
 
 # Read utility functions
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 UTIL_SCRIPT=util.sh
 . ${SCRIPT_DIR}/${UTIL_SCRIPT}
 
 #Local switches
-RDS_DB_HOST=${1:$PROJECT_NAME.$DEF_HOST_SFX}
+RDS_DB_HOST=${1:-$PROJECT_NAME.$DEF_HOST_SFX}
 RDS_DB_PASS_PATH=${2:-$DEF_RDS_PASS_PATH}
 UTIL_SCRIPT=util.sh
 
 PROJECT_DIR=${SCRIPT_DIR}/${PROJECT_NAME}
-CLUSTER_CONFIG_FILE=cluster-config.yaml
+CLUSTER_CONFIG_FILE=${PROJECT}/cluster-config.yaml
 
 
 usage () {
@@ -52,7 +53,7 @@ create_secrets (){
     read_refs
     
     RDS_DB_PASS=$(head -n 1 $RDS_DB_PASS_PATH);
-    
+    kubectl delete secret metatrino-secret --ignore-not-found=true
     kubectl create secret generic metatrino-secret \
     --from-literal=rds-pg-host=${RDS_DB_HOST} \
     --from-literal=rds-pg-name=${RDS_DB_NAME} \
@@ -60,13 +61,13 @@ create_secrets (){
     --from-literal=rds-pg-pass=${RDS_DB_PASS}
     
     read_creds
-
+    kubectl delete secret s3-vibrant-dragon --ignore-not-found=true
     kubectl create secret generic s3-vibrant-dragon \
     --from-literal=id=${aws_access_key_id} \
     --from-literal=secret=${aws_secret_access_key}
 }
 install () {
-    helm install ${PROJECT_NAME} ${SCRIPT_DIR}/${PROJECT_NAME}
+    helm install ${PROJECT_NAME} ${SCRIPT_DIR}/${PROJECT}
 }
 
 uninstall () {
@@ -76,6 +77,5 @@ uninstall () {
 create_secrets
 setup_cluster
 install
-uninstall
 
 echo 

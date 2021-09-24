@@ -89,7 +89,7 @@ PGPASSWORD=${RDS_DB_PASSWORD} psql -U ${RDS_DB_USER} \
     -h ${RDS_DB_HOST} -f ${DUMP_FILE} ${RDS_DB_NAME}
     
 # Build Metastore/Trino
-ARGS="${RDS_DB_HOST} ${RDS_DB_NAME} ${RDS_DB_PASSWORD_PATH}"
+ARGS="${RDS_DB_HOST} ${RDS_DB_PASSWORD_PATH}"
 IFS=',' read -ra RES <<< $( . ${META_SCRIPT} ${ARGS} | tail -n 1)
 
 reset_namespace
