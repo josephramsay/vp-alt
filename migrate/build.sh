@@ -75,12 +75,14 @@ create_security_group () {
 }
 
 create_subnet_group () {
-        
-    SFX=`echo ${NETWORK} | cut -c2- | awk '{print tolower($0)}'`
+    #Use SFX to differentiate between Private/Public    
+    #SFX=`echo ${NETWORK} | cut -c2- | awk '{print tolower($0)}'`
+    #SUBNET_IDS=$(aws ec2 describe-subnets \
+    #    --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
+    #    --query "Subnets[*].SubnetId" --output json | jq -c .)
     SUBNET_IDS=$(aws ec2 describe-subnets \
-        --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster/SubnetP${SFX}*" \
+        --filters "Name=tag:Name, Values=eksctl-${CLUSTER_NAME}-cluster*" \
         --query "Subnets[*].SubnetId" --output json | jq -c .)
-
     SUBNET_GROUP_NAME="${PREFIX}-sng-${PROJECT}"
     SUBNET_GROUP_DESC="Subnet Group for ${PROJECT}"
 
