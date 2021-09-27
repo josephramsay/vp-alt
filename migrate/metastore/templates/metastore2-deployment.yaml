@@ -28,6 +28,9 @@ spec:
       containers:
       - name: {{ .Values.metastore.name }}
         image: {{ .Values.metastore.image }}
+        #Giro giro azucar
+        command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
         env:
           - name: POSTGRES_HOST
             valueFrom:
