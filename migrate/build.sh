@@ -49,7 +49,7 @@ fetch_vpc_ids () {
         exit 1
     fi
     #comma sep the vpc list and write it to refs
-    VPC_ID_CS=$(awk '{gsub(/[ ]+/,",")}1' <<<${VPC_ID})
+    VPC_ID_CS=$(sed -e "s/[[:space:]]\+/,/g" <<<${VPC_ID})
     write_refs NEW VPC_ID_CS
     #copy the vpcs to an array
     VPC_ID_A=( $VPC_ID )
@@ -118,7 +118,7 @@ authorise_subnets (){
             --port ${RDS_DB_PORT} \
             --cidr ${cidr};
     done
-    SUBNET_CIDR=$(awk '{gsub(/[ ]+/,",")}1' <<<${SUBNET_CIDR})
+    SUBNET_CIDR=$(sed -e "s/[[:space:]]\+/,/g" <<<${SUBNET_CIDR})
 
     #TODO Can't read this back as is, trim and comma sep
     write_refs SUBNET_CIDR
