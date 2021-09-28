@@ -4,7 +4,7 @@ import json
 process = True
 
 trino_conn = trino.dbapi.connect(
-    #host='trino2-coordinator-headless',
+    #host='trino-coordinator-headless',
     host='localhost',
     port=8080,
     user='joer',

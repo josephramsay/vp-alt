@@ -15,22 +15,22 @@ cluster:
   name: vp-test
 
 metastore:
-  name: metastore2
+  name: metastore
   nodegroupname: metastore-mng
   port: 9083
   image: scienz/walden-metastore:latest
 
 trino:
-  name: trino2
+  name: trino
   port: 8080
   image: scienz/walden-trino:latest
   coordinator:
-    name: trino2-coordinator
+    name: trino-coordinator
     nodegroupname: trino-mng
   headless:
-    name: trino2-coordinator-headless
+    name: trino-coordinator-headless
   worker:
-    name: trino2-worker
+    name: trino-worker
     nodegroupname: trino-worker-mng
 
 service:

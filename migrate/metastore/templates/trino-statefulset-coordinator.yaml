@@ -3,29 +3,29 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app: {{ .Values.trino.worker.name }}
-  name: {{ .Values.trino.worker.name }}
+    app: {{ .Values.trino.coordinator.name }}
+  name: {{ .Values.trino.coordinator.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
-  serviceName: "{{ .Values.trino.worker.name }}"
-  replicas: 4
+  serviceName: "{{ .Values.trino.coordinator.name }}"
+  replicas: 1
   selector:
     matchLabels:
-      app: {{ .Values.trino.worker.name }}
+      app: {{ .Values.trino.coordinator.name }}
   template:
     metadata:
       labels:
-        app: {{ .Values.trino.worker.name }}
+        app: {{ .Values.trino.coordinator.name }}
     spec:
       nodeSelector:
         kubernetes.io/arch: amd64
         alpha.eksctl.io/cluster-name: {{ .Values.cluster.name }}
-        alpha.eksctl.io/nodegroup-name: {{ .Values.trino.worker.nodegroupname }}
+        alpha.eksctl.io/nodegroup-name: {{ .Values.trino.coordinator.nodegroupname }}
         role: trino
       volumes:
         - name: properties-vol
           configMap:
-            name: properties-trino2
+            name: properties-trino
         - name: pre-install
           emptyDir: {}
         - name: mem
@@ -87,7 +87,7 @@ spec:
               key: secret
         image: {{ .Values.trino.image }}
         imagePullPolicy: "Always"
-        name: trino-worker
+        name: {{ .Values.trino.coordinator.name }}
         ports:
         - containerPort: {{ .Values.trino.port }}
         resources: {}
