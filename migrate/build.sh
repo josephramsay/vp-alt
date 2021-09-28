@@ -15,7 +15,7 @@ NETWORK="PUBLIC"
 BLOCK="TRUE"
 
 #Set args from migrate script if provided
-RDS_DB_NAME=${1:-metastore_db}
+RDS_DB_NAME=${1:-metastore}
 RDS_DB_USER=${2:-metastore_user}
 RDS_DB_PASS_PATH=${3:-$DEF_RDS_PASS_PATH}
 

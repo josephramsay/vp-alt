@@ -5,7 +5,7 @@
 replicaCount: 1
 
 postgres:
-  name: metastore_db
+  name: metastore
   port: 5432
 
 namespace:

@@ -12,7 +12,7 @@ DUMP_FILE=${PROJECT_NAME}.dump.sql
 
 DUMMY_USER=${PROJECT}_user
 DUMMY_PASS=${PROJECT}_pass
-DUMMY_NAME=${PROJECT}_db
+DUMMY_NAME=${PROJECT}
 
 # Passwords can be found on the pod in the env vars.
 # grep for PASS. It will be something like $DBNAME_PASSWORD. Save
@@ -69,7 +69,7 @@ switch_namespace
 
 #Setup Destination
 
-# Send; database name, database user, database password (indirectly)
+# Send pod; database name, database user, database password (indirectly)
 # to new db setup so that naming is consistent for migrating users
 ARGS="${POD_DB_NAME} ${POD_DB_USER} ${DEF_DST_PASS_PATH}"
 IFS=',' read -ra RES <<< $( . ${BUILD_SCRIPT} ${ARGS} | tail -n 1)

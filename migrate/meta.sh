@@ -61,6 +61,7 @@ create_secrets (){
     --from-literal=rds-pg-pass=${RDS_DB_PASS}
     
     read_creds
+    
     kubectl delete secret s3-vibrant-dragon --ignore-not-found=true
     kubectl create secret generic s3-vibrant-dragon \
     --from-literal=id=${aws_access_key_id} \
