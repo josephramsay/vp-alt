@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
 import unittest
+import copy
 import time
 import os
+import pickle
 
 import subprocess
 #from pprint import pprint
@@ -44,7 +46,7 @@ def ksetup():
     kapi = kclient.CoreV1Api()
     return kapi
 
-class Test_KubeConnectivity():    
+class Test_KubeConnectivity(unittest.TestCase):    
     def setUp(self):  
         self.kapi = ksetup()
 
@@ -53,14 +55,21 @@ class Test_KubeConnectivity():
 
     def test_1_getpods(self):
         result = self.kapi.list_pod_for_all_namespaces(watch=False)
-        print (result)
-        self.assertTrue(result)
+        self.assertTrue(result,'Cannot fetch pods')
+        metadata = []
+        for item in result.items:
+            metadata.append({'name':item.metadata.name,'':item.metadata.namespace})
+        self.assertTrue(any([i['name']=='trino2-coordinator-0' for i in metadata]), 'Cannot find trino2 coordinator pod')
+        self.assertTrue(any([i['name']=='trino2-worker-0' for i in metadata]), 'Cannot find trino2 worker pod')
+        
 
-class Test_TrinoConnectivity(unittest.TestCase):
+
+class Test_TrinoConnectivity1(unittest.TestCase):
     @classmethod
     def setUpClass(cls):  
-        print('Testing',project1)
-        cls.proc = pfon(project1)
+        cls.project = project1
+        print('Testing',cls.project)
+        cls.proc = pfon(cls.project)
         cls.api = ksetup()
         cls.cursor = tconnect()        
         
@@ -111,6 +120,9 @@ class Test_TrinoConnectivity(unittest.TestCase):
                 self.tables.update({c:localschema})
                 #print('<T> CAT=',c,qt)
                 #pprint(self.tables)
+        
+            with open(self.project+'.tables.txt', 'wb') as fh:
+                pickle.dump(self.tables,fh)
         return self.tables
 
     def test_3_gettables(self):
@@ -129,15 +141,22 @@ class Test_TrinoConnectivity(unittest.TestCase):
         self.cursor.execute(q)
         self.assertIsNotNone(self.cursor.fetchall(),'Failed query {}'.format(q)) 
 
-class Test_TrinoConnectivity2(Test_TrinoConnectivity):
+class Test_TrinoConnectivity2(Test_TrinoConnectivity1):
 
     @classmethod
     def setUpClass(cls): 
-        print('Testing',project2) 
-        cls.proc = pfon(project2)
+        cls.project = project2
+        print('Testing',cls.project)
+        cls.proc = pfon(cls.project)
         cls.api = ksetup()
         cls.cursor = tconnect()
-        
+
+    def test_6_comparetables(self):
+        pickle1 = open (project1+".tables.txt", "rb")
+        tables1 = pickle.load(pickle1)
+        pickle2 = open (project2+".tables.txt", "rb")
+        tables2 = pickle.load(pickle2)
+        self.assertEqual(tables1,tables2)
 
 if __name__ == '__main__':
     #t()
