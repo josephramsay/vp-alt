@@ -29,10 +29,10 @@ The arguments identify the RDS instance ID, the subnet group and the security gr
 
 __Setup Metastore and Trino__
 
-The script `meta.sh` runs a helm chart install that sets up one metastore instance, a trino coordinator and up to four trino workers. This script is called by the migration during migration
+The script `meta.sh` runs a helm install that sets up one metastore instance, a trino coordinator and up to four trino workers. This script is called by the `migrate.sh` during a full run
 
 ```bash
-./meta.sh [ <project-name> <rds-host> <rds-password-path> ]
+./meta.sh [ <rds-host> <rds-password-path> ]
 ```
 
 __HACK - postgres user__
