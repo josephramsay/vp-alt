@@ -2,23 +2,18 @@
 
 import unittest
 import time
-import sys
 import os
-import shutil
-import types
-import logging
-import argparse
-import subprocess
-from pprint import pprint
 
-import json
+import subprocess
+#from pprint import pprint
 
 from trino.dbapi import connect as trinoconnect
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
-from kubernetes import stream as kstream
 
-project = 'trino2-coordinator-headless'
+project1 = 'trino-coordinator-headless'
+project2 = 'trino2-coordinator-headless'
+
 namespace = 'default'
 ports=8080
 exclusions = ['jdbc','metadata','runtime','sf1','sf100', 'sf1000', \
@@ -26,7 +21,6 @@ exclusions = ['jdbc','metadata','runtime','sf1','sf100', 'sf1000', \
 
 def tconnect():
     return trinoconnect(
-        #host=project,
         host='localhost',
         port=8080,
         user='joer',
@@ -34,9 +28,9 @@ def tconnect():
         schema='sentinel'
     ).cursor()
 
-def pfon():
+def pfon(pfsrc):
     path = "{}/.kube/config".format(os.path.expandvars('$HOME'))
-    p = subprocess.Popen(["kubectl","--kubeconfig",path,"port-forward", "svc/"+project, "8080:8080"], \
+    p = subprocess.Popen(["kubectl","--kubeconfig",path,"port-forward", "svc/"+pfsrc, "8080:8080"], \
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     while p.stdout.readline().decode("utf-8")[:10] != 'Forwarding':
         time.sleep(5)
@@ -65,9 +59,11 @@ class Test_KubeConnectivity():
 class Test_TrinoConnectivity(unittest.TestCase):
     @classmethod
     def setUpClass(cls):  
-        cls.proc = pfon()
+        print('Testing',project1)
+        cls.proc = pfon(project1)
         cls.api = ksetup()
-        cls.cursor = tconnect()
+        cls.cursor = tconnect()        
+        
     
     @classmethod
     def tearDownClass(cls):
@@ -131,18 +127,17 @@ class Test_TrinoConnectivity(unittest.TestCase):
     def test_5_userquery_2(self):
         q = 'SELECT file_name, url, bucket FROM usgsElevation'
         self.cursor.execute(q)
-        self.assertIsNotNone(self.cursor.fetchall(),'Failed query {}'.format(q))   
+        self.assertIsNotNone(self.cursor.fetchall(),'Failed query {}'.format(q)) 
 
+class Test_TrinoConnectivity2(Test_TrinoConnectivity):
 
-def t():
-    tconnect()
-    ksetup()
-    #x = Test_TrinoConnectivity()
-    #x.setup()
-    #print(x.catalogs)
-    #print(x.schemas)
-    #print(x.tables)
-
+    @classmethod
+    def setUpClass(cls): 
+        print('Testing',project2) 
+        cls.proc = pfon(project2)
+        cls.api = ksetup()
+        cls.cursor = tconnect()
+        
 
 if __name__ == '__main__':
     #t()

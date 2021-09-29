@@ -35,6 +35,17 @@ The script `meta.sh` runs a helm install that sets up one metastore instance, a 
 ./meta.sh [ <rds-host> <rds-password-path> ]
 ```
 
+__Testing__
+
+Unittesting is done using python unittest. Tests are collected in a suite called `test_migration.py` which can be run with the command.
+
+```python
+python test_migration.py
+```
+
+Testing will run a range of simple tests on the data returned after the migration and will operate on both the previous and new implementations. This will pick up any discrepencies in the returned data.
+
+
 __HACK - postgres user__
 
 By default super user access is not provided on container object database instances for security reasons. In practise, in order to dump a database for migration, we must run the `pg_dump` command as a privileged user. One process to achieve this required level of access is outlined here.  
