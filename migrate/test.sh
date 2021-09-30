@@ -2,9 +2,9 @@
 
 set -e
 
-echo "placeholder for tests"
-
+echo 'Running Tests'
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-MIGRATE_SCRIPT=migrate.sh
-META_SCRIPT=meta.sh
-. ${SCRIPT_DIR}/${META_SCRIPT}
+PY_TEST_SCRIPT=test/test_migration.py
+
+# Run the migration test script
+python3 ${SCRIPT_DIR}/${PY_TEST_SCRIPT}

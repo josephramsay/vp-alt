@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: properties-trino2
+  name: properties-trino
   namespace: {{ .Values.namespace.name }}
 data:
   node.properties.template: |

@@ -29,11 +29,22 @@ The arguments identify the RDS instance ID, the subnet group and the security gr
 
 __Setup Metastore and Trino__
 
-The script `meta.sh` runs a helm chart install that sets up one metastore instance, a trino coordinator and up to four trino workers. This script is called by the migration during migration
+The script `meta.sh` runs a helm install that sets up one metastore instance, a trino coordinator and up to four trino workers. This script is called by the `migrate.sh` during a full run
 
 ```bash
-./meta.sh [ <project-name> <rds-host> <rds-password-path> ]
+./meta.sh [ <rds-host> <rds-password-path> ]
 ```
+
+__Testing__
+
+Unittesting is done using python unittest. Tests are collected in a suite called `test_migration.py` which can be run with the command.
+
+```python
+python test_migration.py
+```
+
+Testing will run a range of simple tests on the data returned after the migration and will operate on both the previous and new implementations. This will pick up any discrepencies in the returned data.
+
 
 __HACK - postgres user__
 

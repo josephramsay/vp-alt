@@ -1,4 +1,4 @@
-coordinator=$(bash -c "if [ $HOSTNAME == 'trino2-coordinator-0' ]; then echo 'true'; else echo 'false'; fi")
+coordinator=$(bash -c "if [ $HOSTNAME == 'trino-coordinator-0' ]; then echo 'true'; else echo 'false'; fi")
 node-scheduler.include-coordinator=false
 http-server.http.port=8080
 query.max-length=10000000
@@ -6,7 +6,7 @@ query.max-memory=40GB
 query.max-memory-per-node=4000MB
 query.max-total-memory-per-node=4000MB
 task.writer-count=2
-discovery.uri=http://trino2-coordinator-headless:8080
-$(bash -c "if [ $HOSTNAME == 'trino2-coordinator-0' ]; then echo '
+discovery.uri=http://trino-coordinator-headless:8080
+$(bash -c "if [ $HOSTNAME == 'trino-coordinator-0' ]; then echo '
 discovery-server.enabled=true
 '; else echo ''; fi")
