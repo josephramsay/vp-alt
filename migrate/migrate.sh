@@ -17,6 +17,7 @@ UTIL_SCRIPT=util.sh
 # Set script names
 BUILD_SCRIPT=build.sh
 META_SCRIPT=meta.sh
+TEST_SCRIPT=test.sh
 DUMP_FILE=${PROJECT_NAME}.dump.sql
 
 # Set dummy user/pass and database names
@@ -110,3 +111,5 @@ ARGS="${RDS_DB_HOST} ${RDS_DB_PASSWORD_PATH}"
 IFS=',' read -ra RES <<< $( . ${META_SCRIPT} ${ARGS} | tail -n 1)
 
 reset_namespace
+
+. ${TEST_SCRIPT}
