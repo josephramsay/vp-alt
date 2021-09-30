@@ -32,8 +32,10 @@ trap finally EXIT
 
 
 setup_cluster () {  
+    # Create clusters and nodegroups if required
     # Its a bit risky to run some of this so commented out for now and will be done manually
 
+    #TODO
     #CLUSTER_EXISTS=$(eksctl get clusters  --output json | jq --arg C "$CLUSTER_NAME" 'any(.[].metadata.name; . == $C)')
     #if [[ ${CLUSTER_EXISTS} != "true" ]]; then
     #    eksctl create cluster --region ${REGION} --name ${CLUSTER_NAME} --version 1.19 --without-nodegroup
@@ -50,9 +52,13 @@ setup_cluster () {
 }
 
 create_secrets (){
+    # Store kubectl secrets
     read_refs
     
     RDS_DB_PASS=$(head -n 1 $RDS_DB_PASS_PATH);
+    # Create secrets from RDS variables. 
+    # Note: While not particularly secret some values are stored as secrets for 
+    # convenience and because the are user configurable 
     kubectl delete secret metatrino-secret --ignore-not-found=true
     kubectl create secret generic metatrino-secret \
     --from-literal=rds-pg-host=${RDS_DB_HOST} \
@@ -62,11 +68,13 @@ create_secrets (){
     
     read_creds
     
+    # Create secrets from AWS creds sourced from ~/.aws/credentials
     kubectl delete secret s3-vibrant-dragon --ignore-not-found=true
     kubectl create secret generic s3-vibrant-dragon \
     --from-literal=id=${aws_access_key_id} \
     --from-literal=secret=${aws_secret_access_key}
 }
+
 install () {
     helm install ${PROJECT_NAME} ${SCRIPT_DIR}/${PROJECT}
 }

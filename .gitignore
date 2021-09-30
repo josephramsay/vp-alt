@@ -139,3 +139,5 @@ yarn.lock
 
 # User
 **/NOTES
+**/trino-coordinator-headless.tables.txt
+**/trino2-coordinator-headless.tables.txt
